@@ -11,7 +11,7 @@ import ij.process.ImageProcessor;
 /**
  * Cette classe permet a partir d'une image ou d'un stack d'images de mettre en evidence certains objets a partir de criteres tels que 
  * la taille de l'objet, 
- * la longueur du squelette et
+ * la longueur du squelette et,
  * le nombre d'intersections dans le squelettes.
  * Elle encadre en rouge les objets repondant aux criteres. 
  * @author e1502316 Nicola Wilser
