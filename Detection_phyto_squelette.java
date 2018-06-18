@@ -44,7 +44,11 @@ public class Detection_phyto_squelette implements PlugIn {
 	 */
 	private ArrayList <squelette> squelettes; 
 	/**
-	 * Tableau de tableaux de squelettes pour chaque image de l'ImageStack traitees. 
+	 * Contient le nombre d'elements pertinents pour chaque image du stack actuelle. 
+	 */
+	private ArrayList <Integer> nbElementsPertinents;
+	/**
+	 * Tableau de tableaux de squelettes pour chaque image de l'ImageStack traitees.
 	 */
 	/*
 	 * Aucune obligation d'utiliser un stack d'images, il est tout à fait possible d'utiliser une image unique. 
@@ -192,9 +196,26 @@ public class Detection_phyto_squelette implements PlugIn {
 			if (squelettesImages.get(numeroImage).get(i).intersections.size() >= min && squelettesImages.get(numeroImage).get(i).intersections.size() <= max)
 			{
 				encadrer(moyenneIndice(squelettesImages.get(numeroImage).get(i)), 30, 0xff0000);
+				nbElementsPertinents.set(numeroImage, nbElementsPertinents.get(numeroImage)+1); // incrémente le nombre d'elements pertinents dans l'ArrayList pour l'image i du stack
 			}
 
 		}
+	}
+	/**
+	 * Calcule la meilleure image du stack, celle contenant le plus d'objets pertinents. 
+	 * @return (Entier) Indice de l'image du stack avec le plus d'objets pertinents. 
+	 */
+	public int calculerMeilleureImage()
+	{
+		int meilleure = 0;
+		for (int i = 0; i < nbElementsPertinents.size(); i++)
+		{
+			if (nbElementsPertinents.get(i) >= nbElementsPertinents.get(meilleure))
+			{
+				meilleure = i;
+			}
+		}
+		return meilleure+1;
 	}
 	/**
 	 * Change la valeur des pixels blancs en 0xffffff pour s'assurer de la coherence de celle-ci pour les futurs traitements. 
@@ -237,6 +258,7 @@ public class Detection_phyto_squelette implements PlugIn {
 	public void run(String arg) {
 		if (lireParam())
 		{
+			nbElementsPertinents = new ArrayList <Integer>();
 			macroSquelette();
 			ImagePlus imp = IJ.getImage();
 			ImageProcessor im  = imp.getProcessor();
@@ -256,6 +278,7 @@ public class Detection_phyto_squelette implements PlugIn {
 				blanchir();
 				determinerSquelettes();
 				squelettesImages.add(squelettes);
+				nbElementsPertinents.add(0); // initialise l'ArrayList a 0
 			}	
 			macroFermerImageCopie();
 			ImagePlus imp2 = IJ.getImage();
@@ -266,6 +289,8 @@ public class Detection_phyto_squelette implements PlugIn {
 				encadrerSquelettes(i-1);
 				encadrerSquelettesAvecNIntersections(i-1, minIntersection, maxIntersection);
 			}
+			int meilleureImage = calculerMeilleureImage();
+			IJ.showMessage("L'image "+Integer.toString(meilleureImage)+" contient le plus grand nombre d'objets ("+Integer.toString(nbElementsPertinents.get(meilleureImage-1))+").");
 		}
 		
 	}
