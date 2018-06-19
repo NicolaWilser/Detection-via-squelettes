@@ -7,6 +7,7 @@ import ij.ImageStack;
 import ij.gui.GenericDialog;
 import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
+import java.lang.Math;
 
 /**
  * Cette classe permet a partir d'une image ou d'un stack d'images de mettre en evidence certains objets a partir de criteres tels que 
@@ -54,6 +55,10 @@ public class Detection_phyto_squelette implements PlugIn {
 	 * Aucune obligation d'utiliser un stack d'images, il est tout à fait possible d'utiliser une image unique. 
 	 */
 	private ArrayList <ArrayList <squelette>> squelettesImages; // les squelettes de chaque image du stack
+	/**
+	 * Contient tous les squelettes pertinents du stack d'images. 
+	 */
+	private ArrayList <squelette> squelettesPertinents; 
 	/*
 	 * Les variables suivant sont demandées lors de l'appel de la fonction run(), elles sont rentrées par l'utilisateur.
 	 * Elles permettent de déterminer les formes à marquer. 
@@ -175,8 +180,9 @@ public class Detection_phyto_squelette implements PlugIn {
 	/**
 	 * Encadre tous les squelettes d'une image.
 	 * @param numeroImage (Entier) Numero de l'image pour la quelle on souhaite encadrer les squelettes (le numero de l'imageStack). 
+	 * @param couleur (Entier) Couleur en hexadecimal du carre. 
 	 */
-	public void encadrerSquelettes(int numeroImage)
+	public void encadrerSquelettes(int numeroImage, int couleur)
 	{
 		for (int i = 0; i < squelettesImages.get(numeroImage).size(); i++)
 		{
@@ -188,17 +194,32 @@ public class Detection_phyto_squelette implements PlugIn {
 	 * @param numeroImage (Entier) Numero de l'image pour la quelle on souhaite encadrer les squelettes (le numero de l'imageStack). 
 	 * @param min (Entier) Minimum d'intersections pour encadrer le squelette.
 	 * @param max (Entier) Maximum d'intersections pour encadrer le squelette.
+	 * @param couleur (Entier) Couleur en hexadecimal du carre. 
 	 */
-	public void encadrerSquelettesAvecNIntersections(int numeroImage, int min, int max)
+	public void encadrerSquelettesAvecNIntersections(int numeroImage, int min, int max, int couleur)
 	{
 		for (int i = 0; i < squelettesImages.get(numeroImage).size(); i++)
 		{
 			if (squelettesImages.get(numeroImage).get(i).intersections.size() >= min && squelettesImages.get(numeroImage).get(i).intersections.size() <= max)
 			{
-				encadrer(moyenneIndice(squelettesImages.get(numeroImage).get(i)), 30, 0xff0000);
+				encadrer(moyenneIndice(squelettesImages.get(numeroImage).get(i)), 30, couleur);
+			}
+		}
+	}
+	/**
+	 * Compte le nombre d'objets pertinents pour une image donnee. 
+	 * @param numeroImage (Entier) Numero de l'image pour la quelle on souhaite encadrer les squelettes (le numero de l'imageStack). 
+	 * @param min (Entier) Minimum d'intersections pour encadrer le squelette.
+	 * @param max (Entier) Maximum d'intersections pour encadrer le squelette.
+	 */
+	public void compterElementsPertinents(int numeroImage, int min, int max)
+	{
+		for (int i = 0; i < squelettesImages.get(numeroImage).size(); i++)
+		{
+			if (squelettesImages.get(numeroImage).get(i).intersections.size() >= min && squelettesImages.get(numeroImage).get(i).intersections.size() <= max)
+			{
 				nbElementsPertinents.set(numeroImage, nbElementsPertinents.get(numeroImage)+1); // incrémente le nombre d'elements pertinents dans l'ArrayList pour l'image i du stack
 			}
-
 		}
 	}
 	/**
@@ -239,7 +260,7 @@ public class Detection_phyto_squelette implements PlugIn {
 	 * duplique l'image courante, 
 	 * la binarise avec la methode d'Otsu, 
 	 * supprime les imperfections et les objets de taille inappropriee,
-	 *  et cree les squelettes des objets retenus. 
+	 * et cree les squelettes des objets retenus. 
 	 */
 	public void macroSquelette()
 	{
@@ -253,12 +274,91 @@ public class Detection_phyto_squelette implements PlugIn {
 		IJ.runMacro("run(\"Close\");run(\"Close\");run(\"RGB Color\");");
 	}
 	/**
+	 * Indique si deux squelettes se situent dans la meme zone, à une approximation pres. 
+	 * @param s1 (squelette) Premier squelette
+	 * @param s2 (squelette) Deuxieme squelette
+	 * @param approximation (Entier) Approximation toleree 
+	 * @return (Booleen) Vrai si les deux squelettes sont dans la meme zone, faux sinon. 
+	 */
+	public boolean sontDansMemeZone(squelette s1, squelette s2, int approximation)
+	{
+		int indiceMoyenS1 = moyenneIndice(s1);
+		int indiceMoyenS2 = moyenneIndice(s2);
+		int x1 = colonne(indiceMoyenS1);
+		int y1 = ligne(indiceMoyenS1);
+		int x2 = colonne(indiceMoyenS2);
+		int y2 = ligne(indiceMoyenS2);
+		if (Math.abs(x1-x2) <= approximation && Math.abs(y1-y2) <= approximation)
+		{
+			return true;
+		}
+		return false;
+	}
+	/**
+	 * Determine tous les squelettes pertinents du stack d'images et les stocke dans une ArrayList. 
+	 */
+	public void determinerTousLesSquelettesPertinents()
+	{
+		for (int j = 0; j < squelettesImages.size(); j++)
+		{
+			for (int i = 0; i < squelettesImages.get(j).size(); i++)
+			{
+				if (squelettesImages.get(j).get(i).intersections.size() >= minIntersection && squelettesImages.get(j).get(i).intersections.size() <= maxIntersection)
+				{
+					int k = 0;
+					while (k < squelettesPertinents.size() && !sontDansMemeZone(squelettesImages.get(j).get(i), squelettesPertinents.get(k), 50))
+					{
+						k++;
+					}
+					if (k == squelettesPertinents.size())
+					{
+						squelettesPertinents.add(squelettesImages.get(j).get(i));
+					}
+				}
+			}
+			
+		}
+	}
+	/**
+	 * Encadre tous les squelettes pertinents du stack d'image sur une image précise du stack. 
+	 * @param indiceImage (Entier) Indice de l'image sur le quel on fait les encadrements.
+	 * @param couleur (Entier) Couleur en hexadecimal de l'encadrement
+	 */
+	public void encadrerTousLesSquelettesPertinents(int couleur)
+	{
+		for (int i = 0; i < squelettesPertinents.size(); i++)
+		{
+			encadrer(moyenneIndice(squelettesPertinents.get(i)), 30, couleur);
+		}
+	}
+	/**
+	 * Encadre tous les squelettes pertinents du stack d'image sauf ceux d'une image précise.
+	 * @param indiceImage (Entier) Indice de l'image pour la quelle on ne suite pas d'encadrements. 
+	 */
+	public void encadrerTousLesSquelettesPertinentsSauf(int indiceImage, int couleur)
+	{
+		for (int i = 0; i < squelettesPertinents.size(); i++)
+		{
+			int k = 0;
+			while (k < squelettesImages.get(indiceImage).size() && (!sontDansMemeZone(squelettesPertinents.get(i), squelettesImages.get(indiceImage).get(k), 50)
+					|| !(squelettesImages.get(indiceImage).get(k).intersections.size() >= minIntersection && squelettesImages.get(indiceImage).get(k).intersections.size() <= maxIntersection)))
+			{
+				k++;
+			}
+			if (k == squelettesImages.get(indiceImage).size())
+			{
+				encadrer(moyenneIndice(squelettesPertinents.get(i)), 30, couleur);
+			}
+		}
+	}
+	/**
 	 * Methode principale qui demande a l'utilisateur les parametres pour detecter les objets pertinents puis analyse la ou les image(s) pour marquer ces objets en les encadrant. 
 	 */
 	public void run(String arg) {
 		if (lireParam())
 		{
 			nbElementsPertinents = new ArrayList <Integer>();
+			squelettesPertinents = new ArrayList <squelette>();
 			macroSquelette();
 			ImagePlus imp = IJ.getImage();
 			ImageProcessor im  = imp.getProcessor();
@@ -286,10 +386,14 @@ public class Detection_phyto_squelette implements PlugIn {
 			for (int i = 1; i <= stk2.getSize(); i++)
 			{
 				imageOrigine = (int[]) stk2.getPixels(i);
-				encadrerSquelettes(i-1);
-				encadrerSquelettesAvecNIntersections(i-1, minIntersection, maxIntersection);
+				//encadrerSquelettes(i-1, 0xffffff);
+				encadrerSquelettesAvecNIntersections(i-1, minIntersection, maxIntersection, 0x00ff00);
+				compterElementsPertinents(i-1, minIntersection, maxIntersection);
 			}
 			int meilleureImage = calculerMeilleureImage();
+			imageOrigine = (int[]) stk2.getPixels(meilleureImage);
+			determinerTousLesSquelettesPertinents();
+			encadrerTousLesSquelettesPertinentsSauf(meilleureImage-1, 0xff0000);
 			IJ.showMessage("L'image "+Integer.toString(meilleureImage)+" contient le plus grand nombre d'objets ("+Integer.toString(nbElementsPertinents.get(meilleureImage-1))+").");
 		}
 		
