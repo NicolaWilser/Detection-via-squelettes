@@ -63,6 +63,7 @@ public class Detection_phyto_squelette implements PlugIn {
 	 */
 	private ArrayList <squelette> squelettesPertinents; 
 	private ArrayList <ArrayList <Integer>> surfaceSquelettesPertinents;
+	private ArrayList <ArrayList <Integer>> perimetreSquelettesPertinents;
 	/*
 	 * Les variables suivant sont demandées lors de l'appel de la fonction run(), elles sont rentrées par l'utilisateur.
 	 * Elles permettent de déterminer les formes à marquer. 
@@ -514,6 +515,73 @@ public class Detection_phyto_squelette implements PlugIn {
 		}
 	}
 	/**
+	 * Determine s'il y a au moins un pixel de la couleur specifiee autour d'un indice donne. 
+	 * @param indice (Entier) Indice du pixel pour le quel on souhaite savoir s'il a des voisins. 
+	 * @param couleur (Entier) Couleur en hexadecimal de la couleur des voisins a tester. 
+	 * @return Vrai s'il y a des voisins de la bonne couleur, faux sinon. 
+	 */
+	boolean contientVoisin(int indice, int couleur, int image[])
+	{
+		if (image[indice-1] == couleur)
+		{
+			return true;
+		}
+		if (image[indice+1] == couleur)
+		{
+			return true;
+		}
+		if (image[indice+nbColonnes-1] == couleur)
+		{
+			return true;
+		}
+		if (image[indice+nbColonnes+1] == couleur)
+		{
+			return true;
+		}
+		if (image[indice-nbColonnes-1] == couleur)
+		{
+			return true;
+		}
+		if (image[indice-nbColonnes+1] == couleur)
+		{
+			return true;
+		}
+		if (image[indice+nbColonnes] == couleur)
+		{
+			return true;
+		}
+		if (image[indice-nbColonnes] == couleur)
+		{
+			return true;
+		}
+		return false;
+	}
+	public int perimetreObjet(int indiceObjet)
+	{
+		if (estValide(indiceObjet) && imageBinaire[indiceObjet] == 0xffffff)
+		{
+			imageBinaire[indiceObjet] = 0xfffffe;
+			if (contientVoisin(indiceObjet, -0x1000000, imageBinaire))
+			{
+				return (perimetreObjet(indiceObjet+1)+perimetreObjet(indiceObjet-1)+
+						perimetreObjet(indiceObjet-nbColonnes)+perimetreObjet(indiceObjet+nbColonnes)+
+						perimetreObjet(indiceObjet-nbColonnes+1)+perimetreObjet(indiceObjet+nbColonnes+1)+
+						perimetreObjet(indiceObjet-nbColonnes-1)+perimetreObjet(indiceObjet+nbColonnes-1))+1;
+			}
+			else
+			{
+				return (perimetreObjet(indiceObjet+1)+perimetreObjet(indiceObjet-1)+
+						perimetreObjet(indiceObjet-nbColonnes)+perimetreObjet(indiceObjet+nbColonnes)+
+						perimetreObjet(indiceObjet-nbColonnes+1)+perimetreObjet(indiceObjet+nbColonnes+1)+
+						perimetreObjet(indiceObjet-nbColonnes-1)+perimetreObjet(indiceObjet+nbColonnes-1));
+			}
+		}
+		else
+		{
+			return 0;
+		}
+	}
+	/**
 	 * Calcule et remplit l'ArrayList surfaceSquelettesPertinents avec la surface de tous les objets de tous les images du stack. 
 	 * @param stk (ImageStack) Stack d'images que l'on souhaite analyser.
 	 */
@@ -529,6 +597,23 @@ public class Detection_phyto_squelette implements PlugIn {
 				if (squelettesImages.get(numeroImage).get(i).intersections.size() >= minIntersection && squelettesImages.get(numeroImage).get(i).intersections.size() <= maxIntersection)
 				{
 					surfaceSquelettesPertinents.get(numeroImage).add(surfaceObjet(moyenneIndice(squelettesImages.get(numeroImage).get(i))));
+				}
+			}
+		}
+		blanchir(imageBinaire);
+	}
+	public void calculerPerimetreObjetsInterets(ImageStack stk)
+	{
+		for (int numeroImage = 0; numeroImage < squelettesImages.size(); numeroImage++)
+		{
+			imageBinaire = (int[]) stk.getProcessor(numeroImage+1).getPixels();
+			blanchir(imageBinaire); 
+			for (int i = 0; i < squelettesImages.get(numeroImage).size(); i++)
+			{
+				perimetreSquelettesPertinents.add(new ArrayList <Integer>());
+				if (squelettesImages.get(numeroImage).get(i).intersections.size() >= minIntersection && squelettesImages.get(numeroImage).get(i).intersections.size() <= maxIntersection)
+				{
+					perimetreSquelettesPertinents.get(numeroImage).add(perimetreObjet(moyenneIndice(squelettesImages.get(numeroImage).get(i))));
 				}
 			}
 		}
@@ -568,28 +653,34 @@ public class Detection_phyto_squelette implements PlugIn {
 	public void tableauDeResultats()
 	{
 		ResultsTable rt = new ResultsTable(squelettesImages.size()); 
-		int surface, surfaceTotale, taille;
+		int surface, surfaceTotale, perimetre, perimetreTotal, taille;
 		for (int numeroImage = 0; numeroImage < squelettesImages.size(); numeroImage++)
 		{
-			rt.setValue("Image", numeroImage+1, numeroImage+1);
+			rt.setValue("Image", numeroImage, numeroImage+1);
 			taille = surfaceSquelettesPertinents.get(numeroImage).size();
-			rt.setValue("Nombre d'objets détectés", numeroImage+1, taille);
+			rt.setValue("Nombre d'objets détectés", numeroImage, taille);
 			surfaceTotale = 0;
+			perimetreTotal = 0;
 			int i;
 			for (i = 0; i < taille; i++)
 			{
 				surface = surfaceSquelettesPertinents.get(numeroImage).get(i);
+				perimetre = perimetreSquelettesPertinents.get(numeroImage).get(i);
 				surfaceTotale += surface;
+				perimetreTotal += perimetre;
 			}
 			if (i != 0)
 			{
-				rt.setValue("Surface moyenne", numeroImage+1, surfaceTotale/taille);
+				rt.setValue("Surface moyenne", numeroImage, surfaceTotale/taille);
+				rt.setValue("Perimetre moyen", numeroImage, perimetreTotal/taille);
 			}
 			else
 			{
-				rt.setValue("Surface moyenne", numeroImage+1, 0);
+				rt.setValue("Surface moyenne", numeroImage, 0);
+				rt.setValue("Perimetre moyen", numeroImage, 0);
 			}
 		}
+		macroFermerImageCopie(3);
 		rt.show("Résultats de l'analyse");
 	}
 	/**
@@ -601,6 +692,7 @@ public class Detection_phyto_squelette implements PlugIn {
 		squelettesPertinents = new ArrayList <squelette>();
 		surfaceSquelettesPertinents = new ArrayList <ArrayList <Integer>>();
 		squelettesImages = new ArrayList <ArrayList <squelette>>();
+		perimetreSquelettesPertinents = new ArrayList <ArrayList <Integer>>();
 	}
 	/**
 	 * Charge une ImageStack et initialise les variables nbColonnes, nbLignes et taille.
@@ -672,9 +764,8 @@ public class Detection_phyto_squelette implements PlugIn {
 			ImagePlus imp3 = IJ.getImage();
 			ImageStack stk3 = imp3.getImageStack();
 			calculerSurfaceObjetsInterets(stk3);
-			afficherSurfaces();
+			calculerPerimetreObjetsInterets(stk3);
 			tableauDeResultats();
-			//macroFermerImageCopie(3);
 			IJ.showMessage("L'image "+Integer.toString(meilleureImage)+" contient le plus grand nombre d'objets ("+Integer.toString(nbElementsPertinents.get(meilleureImage-1))+").");
 		}
 	}
