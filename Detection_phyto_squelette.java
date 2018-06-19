@@ -391,36 +391,6 @@ public class Detection_phyto_squelette implements PlugIn {
 		}
 	}
 	/**
-	 * Determine si trois points sont alignes. 
-	 * @param x1 (Entier) Colonne du premier point.
-	 * @param y1 (Entier) Ligne du premier point.
-	 * @param x2 (Entier) Colonne du deuxieme point.
-	 * @param y2 (Entier) Ligne du deuxieme point.
-	 * @param x3 (Entier) Colonne du troisieme point.
-	 * @param y3 (Entier) Ligne du troisieme point.
-	 * @param approximation (Entier) Approximation d'alignement tolere. 
-	 * @return (Booleen) Vrai s'ils sont alignes, faux sinon. 
-	 */
-	public boolean sontAlignes(int x1, int y1, int x2, int y2, int x3, int y3, int approximation)
-	{
-		int calcul = (y3-y1)*(x2-x1)-(y2-y1)*(x3-x1);
-		return (Math.abs(calcul) <= approximation);
-	}
-	/**
-	 * Calcule la distance entre deux points. 
-	 * @param x1 (Entier) Colonne du premier point.
-	 * @param y1 (Entier) Ligne du premier point.
-	 * @param x2 (Entier) Colonne du deuxieme point.
-	 * @param y2 (Entier) Ligne du deuxieme point.
-	 * @return (Entier) Distance entre les deux points. 
-	 */
-	public double distance(int x1, int y1, int x2, int y2)
-	{
-		double xCarre = (double) (x2-x1)*(x2-x1);
-		double yCarre = (double) (y2-y1)*(y2-y1);
-		return (double) Math.sqrt(xCarre+yCarre);
-	}
-	/**
 	 * Marque les differents alignements entre les points s'il y en a. 
 	 * @param ip (ImageProcessor) ImageProcessor pour la quelle on veut marquer les alignements. 
 	 */
@@ -449,12 +419,12 @@ public class Detection_phyto_squelette implements PlugIn {
 					y3 = ligne(indice3);
 					if (i != j && j != k)
 					{
-						if (sontAlignes(x1, y1, x2, y2, x3, y3, 10))
+						if (Utilitaire.sontAlignes(x1, y1, x2, y2, x3, y3, 10))
 						{
 							Line l;
-							if (distance(x1, y1, x2, y2) > distance(x1, y1, x3, y3))
+							if (Utilitaire.distance(x1, y1, x2, y2) > Utilitaire.distance(x1, y1, x3, y3))
 							{
-								if (distance(x1, y1, x2, y2) > distance(x2, y2, x3, y3))
+								if (Utilitaire.distance(x1, y1, x2, y2) > Utilitaire.distance(x2, y2, x3, y3))
 								{
 									l = new Line(x1, y1, x2, y2);
 									System.out.println("1");
@@ -467,7 +437,7 @@ public class Detection_phyto_squelette implements PlugIn {
 							}
 							else
 							{
-								if (distance(x1, y1, x3, y3) > distance(x2, y2, x3, y3))
+								if (Utilitaire.distance(x1, y1, x3, y3) > Utilitaire.distance(x2, y2, x3, y3))
 								{
 									l = new Line(x1, y1, x3, y3);
 									System.out.println("3");
@@ -518,54 +488,12 @@ public class Detection_phyto_squelette implements PlugIn {
 			return 0;
 		}
 	}
-	/**
-	 * Determine s'il y a au moins un pixel de la couleur specifiee autour d'un indice donne. 
-	 * @param indice (Entier) Indice du pixel pour le quel on souhaite savoir s'il a des voisins. 
-	 * @param couleur (Entier) Couleur en hexadecimal de la couleur des voisins a tester. 
-	 * @return Vrai s'il y a des voisins de la bonne couleur, faux sinon. 
-	 */
-	boolean contientVoisin(int indice, int couleur, int image[])
-	{
-		if (image[indice-1] == couleur)
-		{
-			return true;
-		}
-		if (image[indice+1] == couleur)
-		{
-			return true;
-		}
-		if (image[indice+nbColonnes-1] == couleur)
-		{
-			return true;
-		}
-		if (image[indice+nbColonnes+1] == couleur)
-		{
-			return true;
-		}
-		if (image[indice-nbColonnes-1] == couleur)
-		{
-			return true;
-		}
-		if (image[indice-nbColonnes+1] == couleur)
-		{
-			return true;
-		}
-		if (image[indice+nbColonnes] == couleur)
-		{
-			return true;
-		}
-		if (image[indice-nbColonnes] == couleur)
-		{
-			return true;
-		}
-		return false;
-	}
 	public int perimetreObjet(int indiceObjet)
 	{
 		if (estValide(indiceObjet) && imageBinaire[indiceObjet] == 0xffffff)
 		{
 			imageBinaire[indiceObjet] = 0xfffffe;
-			if (contientVoisin(indiceObjet, -0x1000000, imageBinaire))
+			if (Utilitaire.contientVoisin(indiceObjet, -0x1000000, imageBinaire, nbColonnes))
 			{
 				return (perimetreObjet(indiceObjet+1)+perimetreObjet(indiceObjet-1)+
 						perimetreObjet(indiceObjet-nbColonnes)+perimetreObjet(indiceObjet+nbColonnes)+

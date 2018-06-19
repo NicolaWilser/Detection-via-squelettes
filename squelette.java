@@ -204,47 +204,5 @@ public class squelette {
 		}
 		return false;
 	}
-	/**
-	 * Determine s'il y a au moins un pixel de la couleur specifiee autour d'un indice donne. 
-	 * @param indice (Entier) Indice du pixel pour le quel on souhaite savoir s'il a des voisins. 
-	 * @param couleur (Entier) Couleur en hexadecimal de la couleur des voisins a tester. 
-	 * @return Vrai s'il y a des voisins de la bonne couleur, faux sinon. 
-	 */
-	boolean contientVoisin(int indice, int couleur)
-	{
-		if (image[indice-1] == couleur)
-		{
-			return true;
-		}
-		if (image[indice+1] == couleur)
-		{
-			return true;
-		}
-		if (image[indice+nbColonnes-1] == couleur)
-		{
-			return true;
-		}
-		if (image[indice+nbColonnes+1] == couleur)
-		{
-			return true;
-		}
-		if (image[indice-nbColonnes-1] == couleur)
-		{
-			return true;
-		}
-		if (image[indice-nbColonnes+1] == couleur)
-		{
-			return true;
-		}
-		if (image[indice+nbColonnes] == couleur)
-		{
-			return true;
-		}
-		if (image[indice-nbColonnes] == couleur)
-		{
-			return true;
-		}
-		return false;
-	}
 	
 }
