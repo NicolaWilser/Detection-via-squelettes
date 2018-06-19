@@ -9,6 +9,7 @@ import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
 import ij.gui.Line;
 import java.lang.Math;
+import ij.measure.ResultsTable;
 
 /**
  * Cette classe permet a partir d'une image ou d'un stack d'images de mettre en evidence certains objets a partir de criteres tels que 
@@ -480,7 +481,7 @@ public class Detection_phyto_squelette implements PlugIn {
 		for (int numeroImage = 0; numeroImage < squelettesImages.size(); numeroImage++)
 		{
 			imageBinaire = (int[]) stk.getProcessor(numeroImage+1).getPixels();
-			blanchir(imageBinaire);
+			blanchir(imageBinaire); 
 			for (int i = 0; i < squelettesImages.get(numeroImage).size(); i++)
 			{
 				surfaceSquelettesPertinents.add(new ArrayList <Integer>());
@@ -490,6 +491,7 @@ public class Detection_phyto_squelette implements PlugIn {
 				}
 			}
 		}
+		blanchir(imageBinaire);
 	}
 	public void afficherSurfaces()
 	{
@@ -515,6 +517,33 @@ public class Detection_phyto_squelette implements PlugIn {
 				System.out.println("Surface moyenne : "+Integer.toString((int) surfaceTotale/taille)+"\n");
 			}
 		}
+	}
+	public void tableauDeResultats()
+	{
+		ResultsTable rt = new ResultsTable(squelettesImages.size()); 
+		int surface, surfaceTotale, taille;
+		for (int numeroImage = 0; numeroImage < squelettesImages.size(); numeroImage++)
+		{
+			rt.setValue("Image", numeroImage+1, numeroImage+1);
+			taille = surfaceSquelettesPertinents.get(numeroImage).size();
+			rt.setValue("Nombre d'objets détectés", numeroImage+1, taille);
+			surfaceTotale = 0;
+			int i;
+			for (i = 0; i < taille; i++)
+			{
+				surface = surfaceSquelettesPertinents.get(numeroImage).get(i);
+				surfaceTotale += surface;
+			}
+			if (i != 0)
+			{
+				rt.setValue("Surface moyenne", numeroImage+1, surfaceTotale/taille);
+			}
+			else
+			{
+				rt.setValue("Surface moyenne", numeroImage+1, 0);
+			}
+		}
+		rt.show("Résultats de l'analyse");
 	}
 	public void initialiserVariables()
 	{
@@ -582,7 +611,8 @@ public class Detection_phyto_squelette implements PlugIn {
 			ImageStack stk3 = imp3.getImageStack();
 			calculerSurfaceObjetsInterets(stk3);
 			afficherSurfaces();
-			macroFermerImageCopie(3);
+			tableauDeResultats();
+			//macroFermerImageCopie(3);
 			IJ.showMessage("L'image "+Integer.toString(meilleureImage)+" contient le plus grand nombre d'objets ("+Integer.toString(nbElementsPertinents.get(meilleureImage-1))+").");
 		}
 	}
