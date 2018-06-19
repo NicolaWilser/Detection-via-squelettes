@@ -62,7 +62,13 @@ public class Detection_phyto_squelette implements PlugIn {
 	 * Contient tous les squelettes pertinents du stack d'images. 
 	 */
 	private ArrayList <squelette> squelettesPertinents; 
+	/**
+	 * Contient la surface des objets pertinents de chaque image. 
+	 */
 	private ArrayList <ArrayList <Integer>> surfaceSquelettesPertinents;
+	/**
+	 * Contient le perimetre des objets pertinents de chaque image. 
+	 */
 	private ArrayList <ArrayList <Integer>> perimetreSquelettesPertinents;
 	/*
 	 * Les variables suivant sont demandées lors de l'appel de la fonction run(), elles sont rentrées par l'utilisateur.
@@ -88,8 +94,6 @@ public class Detection_phyto_squelette implements PlugIn {
 	 * Nombre de pixels maximum pour considerer une forme comme pertinente.
 	 */
 	private int maxPixels;
-	
-
 	/**
 	 * Renvoie la colonne pour un tableau 2D correspondante a un indice de tableau 1D. 
 	 * @param indice (Entier) L'indice du tableau 1D.
@@ -647,6 +651,10 @@ public class Detection_phyto_squelette implements PlugIn {
 			}
 		}
 	}
+	public double roundness(int indiceImage, int indiceSquelette)
+	{
+		return (surfaceSquelettesPertinents.get(indiceImage).get(indiceSquelette)*4*Math.PI)/(perimetreSquelettesPertinents.get(indiceImage).get(indiceSquelette)*perimetreSquelettesPertinents.get(indiceImage).get(indiceSquelette));
+	}
 	/**
 	 * Cree et affiche un tableau de resultats contenant diverses informations de l'analyse effectuee sur le stack d'images. 
 	 */
@@ -654,6 +662,7 @@ public class Detection_phyto_squelette implements PlugIn {
 	{
 		ResultsTable rt = new ResultsTable(squelettesImages.size()); 
 		int surface, surfaceTotale, perimetre, perimetreTotal, taille;
+		double roundness, roundnessTotale;
 		for (int numeroImage = 0; numeroImage < squelettesImages.size(); numeroImage++)
 		{
 			rt.setValue("Image", numeroImage, numeroImage+1);
@@ -661,23 +670,28 @@ public class Detection_phyto_squelette implements PlugIn {
 			rt.setValue("Nombre d'objets détectés", numeroImage, taille);
 			surfaceTotale = 0;
 			perimetreTotal = 0;
+			roundnessTotale = 0;
 			int i;
 			for (i = 0; i < taille; i++)
 			{
 				surface = surfaceSquelettesPertinents.get(numeroImage).get(i);
 				perimetre = perimetreSquelettesPertinents.get(numeroImage).get(i);
+				roundness = roundness(numeroImage, i);
 				surfaceTotale += surface;
 				perimetreTotal += perimetre;
+				roundnessTotale += roundness;
 			}
 			if (i != 0)
 			{
 				rt.setValue("Surface moyenne", numeroImage, surfaceTotale/taille);
 				rt.setValue("Perimetre moyen", numeroImage, perimetreTotal/taille);
+				rt.setValue("Roundness moyenne", numeroImage, roundnessTotale/taille);
 			}
 			else
 			{
 				rt.setValue("Surface moyenne", numeroImage, 0);
 				rt.setValue("Perimetre moyen", numeroImage, 0);
+				rt.setValue("Roundness moyenne", numeroImage, 0);
 			}
 		}
 		macroFermerImageCopie(3);
