@@ -306,14 +306,23 @@ public class Detection_phyto_squelette implements PlugIn {
 	{
 		IJ.runMacro("run(\"Skeletonize\", \"stack\");run(\"RGB Color\");");
 	}
+	/**
+	 * Lance la macro pour convertir l'image courante en RGB. 
+	 */
 	public void macroRGB()
 	{
 		IJ.runMacro("run(\"RGB Color\");");
 	}
+	/**
+	 * Lance la macro pour convertir l'image courante en 8 bits en faisant une copie. 
+	 */
 	public void macro8bits()
 	{
 		IJ.runMacro("run(\"Duplicate...\", \"duplicate\");run(\"8-bit\");");
 	}
+	/**
+	 * Binarise l'image courante en faisant une copie. 
+	 */
 	public void macroBinarise()
 	{
 		IJ.runMacro("run(\"Duplicate...\", \"duplicate\");run(\"Auto Threshold\", \"method=Otsu white stack\");run(\"Open\", \"stack\");run(\"Analyze Particles...\", \"size="+Integer.toString(minPixels)+"-"+Integer.toString(maxPixels)+" show=Masks clear stack\");setOption(\"BlackBackground\", true);run(\"Make Binary\", \"method=Default background=Light calculate black\");");
@@ -376,17 +385,40 @@ public class Detection_phyto_squelette implements PlugIn {
 			
 		}
 	}
+	/**
+	 * Determine si trois points sont alignes. 
+	 * @param x1 (Entier) Colonne du premier point.
+	 * @param y1 (Entier) Ligne du premier point.
+	 * @param x2 (Entier) Colonne du deuxieme point.
+	 * @param y2 (Entier) Ligne du deuxieme point.
+	 * @param x3 (Entier) Colonne du troisieme point.
+	 * @param y3 (Entier) Ligne du troisieme point.
+	 * @param approximation (Entier) Approximation d'alignement tolere. 
+	 * @return (Booleen) Vrai s'ils sont alignes, faux sinon. 
+	 */
 	public boolean sontAlignes(int x1, int y1, int x2, int y2, int x3, int y3, int approximation)
 	{
 		int calcul = (y3-y1)*(x2-x1)-(y2-y1)*(x3-x1);
 		return (Math.abs(calcul) <= approximation);
 	}
+	/**
+	 * Calcule la distance entre deux points. 
+	 * @param x1 (Entier) Colonne du premier point.
+	 * @param y1 (Entier) Ligne du premier point.
+	 * @param x2 (Entier) Colonne du deuxieme point.
+	 * @param y2 (Entier) Ligne du deuxieme point.
+	 * @return (Entier) Distance entre les deux points. 
+	 */
 	public double distance(int x1, int y1, int x2, int y2)
 	{
 		double xCarre = (double) (x2-x1)*(x2-x1);
 		double yCarre = (double) (y2-y1)*(y2-y1);
 		return (double) Math.sqrt(xCarre+yCarre);
 	}
+	/**
+	 * Marque les differents alignements entre les points s'il y en a. 
+	 * @param ip (ImageProcessor) ImageProcessor pour la quelle on veut marquer les alignements. 
+	 */
 	public void marquerAlignements(ImageProcessor ip)
 	{
 		ArrayList <Integer> pointsDesSquelettes = new ArrayList <Integer>();
@@ -461,6 +493,11 @@ public class Detection_phyto_squelette implements PlugIn {
 		}
 		return true;
 	}
+	/**
+	 * Calcule et renvoie la surface en pixels d'un objet se trouvant a un indice. 
+	 * @param indiceObjet (Entier) Indice de l'objet. 
+	 * @return (Entier) Surface en pixels de l'objet.
+	 */
 	public int surfaceObjet(int indiceObjet)
 	{
 		if (estValide(indiceObjet) && imageBinaire[indiceObjet] == 0xffffff)
@@ -476,6 +513,10 @@ public class Detection_phyto_squelette implements PlugIn {
 			return 0;
 		}
 	}
+	/**
+	 * Calcule et remplit l'ArrayList surfaceSquelettesPertinents avec la surface de tous les objets de tous les images du stack. 
+	 * @param stk (ImageStack) Stack d'images que l'on souhaite analyser.
+	 */
 	public void calculerSurfaceObjetsInterets(ImageStack stk)
 	{
 		for (int numeroImage = 0; numeroImage < squelettesImages.size(); numeroImage++)
@@ -493,6 +534,9 @@ public class Detection_phyto_squelette implements PlugIn {
 		}
 		blanchir(imageBinaire);
 	}
+	/**
+	 * Affiche les surfaces moyennes des objets de chaque image dans la console. Utilise pour les tests. 
+	 */
 	public void afficherSurfaces()
 	{
 		int surface, surfaceTotale, taille;
@@ -518,6 +562,9 @@ public class Detection_phyto_squelette implements PlugIn {
 			}
 		}
 	}
+	/**
+	 * Cree et affiche un tableau de resultats contenant diverses informations de l'analyse effectuee sur le stack d'images. 
+	 */
 	public void tableauDeResultats()
 	{
 		ResultsTable rt = new ResultsTable(squelettesImages.size()); 
@@ -545,6 +592,9 @@ public class Detection_phyto_squelette implements PlugIn {
 		}
 		rt.show("Résultats de l'analyse");
 	}
+	/**
+	 * Initialise les differentes variables a des tableaux vides. 
+	 */
 	public void initialiserVariables()
 	{
 		nbElementsPertinents = new ArrayList <Integer>();
@@ -552,6 +602,10 @@ public class Detection_phyto_squelette implements PlugIn {
 		surfaceSquelettesPertinents = new ArrayList <ArrayList <Integer>>();
 		squelettesImages = new ArrayList <ArrayList <squelette>>();
 	}
+	/**
+	 * Charge une ImageStack et initialise les variables nbColonnes, nbLignes et taille.
+	 * @return (ImageStack) ImageStack correspondant au stack ouvert. 
+	 */
 	public ImageStack chargerImageStack()
 	{
 		ImagePlus imp = IJ.getImage();
@@ -562,6 +616,10 @@ public class Detection_phyto_squelette implements PlugIn {
 		ImageStack stk = imp.getImageStack();
 		return stk;
 	}
+	/**
+	 * Determine tous les squelettes de chaque image du stack passe en parametre. 
+	 * @param stk (ImageStack) Stack d'images. 
+	 */
 	public void determinerSquelettesDuStack(ImageStack stk)
 	{
 		for (int i = 1; i <= stk.getSize(); i++)
@@ -574,6 +632,10 @@ public class Detection_phyto_squelette implements PlugIn {
 			nbElementsPertinents.add(0); // initialise l'ArrayList a 0
 		}	
 	}
+	/**
+	 * Encadre tous les objets du stack d'images.
+	 * @param stk (ImageStack) Stack d'images. 
+	 */
 	public void encadrerObjetsDuStack(ImageStack stk)
 	{
 		for (int i = 1; i <= stk.getSize(); i++)
