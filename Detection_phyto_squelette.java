@@ -7,6 +7,7 @@ import ij.ImageStack;
 import ij.gui.GenericDialog;
 import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
+import ij.gui.Line;
 import java.lang.Math;
 
 /**
@@ -31,6 +32,7 @@ public class Detection_phyto_squelette implements PlugIn {
 	/**
 	 * Nombre de colonnes de l'image traitee. 
 	 */
+	private int[] imageBinaire;
 	private int nbColonnes;
 	/**
 	 * Nombre de lignes de l'image traitee.
@@ -59,6 +61,7 @@ public class Detection_phyto_squelette implements PlugIn {
 	 * Contient tous les squelettes pertinents du stack d'images. 
 	 */
 	private ArrayList <squelette> squelettesPertinents; 
+	private ArrayList <ArrayList <Integer>> surfaceSquelettesPertinents;
 	/*
 	 * Les variables suivant sont demandées lors de l'appel de la fonction run(), elles sont rentrées par l'utilisateur.
 	 * Elles permettent de déterminer les formes à marquer. 
@@ -186,7 +189,7 @@ public class Detection_phyto_squelette implements PlugIn {
 	{
 		for (int i = 0; i < squelettesImages.get(numeroImage).size(); i++)
 		{
-			encadrer(moyenneIndice(squelettesImages.get(numeroImage).get(i)), 30, 0xffffff);
+			encadrer(moyenneIndice(squelettesImages.get(numeroImage).get(i)), 30, couleur);
 		}
 	}
 	/**
@@ -203,6 +206,39 @@ public class Detection_phyto_squelette implements PlugIn {
 			if (squelettesImages.get(numeroImage).get(i).intersections.size() >= min && squelettesImages.get(numeroImage).get(i).intersections.size() <= max)
 			{
 				encadrer(moyenneIndice(squelettesImages.get(numeroImage).get(i)), 30, couleur);
+			}
+		}
+	}
+	/**
+	 * Encadre tous les squelettes pertinents du stack d'image sur une image précise du stack. 
+	 * @param indiceImage (Entier) Indice de l'image sur le quel on fait les encadrements.
+	 * @param couleur (Entier) Couleur en hexadecimal de l'encadrement.
+	 */
+	public void encadrerTousLesSquelettesPertinents(int couleur)
+	{
+		for (int i = 0; i < squelettesPertinents.size(); i++)
+		{
+			encadrer(moyenneIndice(squelettesPertinents.get(i)), 30, couleur);
+		}
+	}
+	/**
+	 * Encadre tous les squelettes pertinents du stack d'image sauf ceux d'une image précise.
+	 * @param indiceImage (Entier) Indice de l'image pour la quelle on ne suite pas d'encadrements. 
+	 * @param couleur (Entier) Couleur en hexadecimal de l'encadrement.
+	 */
+	public void encadrerTousLesSquelettesPertinentsSauf(int indiceImage, int couleur)
+	{
+		for (int i = 0; i < squelettesPertinents.size(); i++)
+		{
+			int k = 0;
+			while (k < squelettesImages.get(indiceImage).size() && (!sontDansMemeZone(squelettesPertinents.get(i), squelettesImages.get(indiceImage).get(k), 50)
+					|| !(squelettesImages.get(indiceImage).get(k).intersections.size() >= minIntersection && squelettesImages.get(indiceImage).get(k).intersections.size() <= maxIntersection)))
+			{
+				k++;
+			}
+			if (k == squelettesImages.get(indiceImage).size())
+			{
+				encadrer(moyenneIndice(squelettesPertinents.get(i)), 30, couleur);
 			}
 		}
 	}
@@ -236,12 +272,15 @@ public class Detection_phyto_squelette implements PlugIn {
 				meilleure = i;
 			}
 		}
+		/*
+		 * On renvoie +1 car les images du stack sont indexes a partir de 1 et non pas 0 comme un tableau habituel.  
+		 */
 		return meilleure+1;
 	}
 	/**
 	 * Change la valeur des pixels blancs en 0xffffff pour s'assurer de la coherence de celle-ci pour les futurs traitements. 
 	 */
-	public void blanchir()
+	public void blanchir(int[] pixels)
 	{
 		for (int i = 0; i < taille; i++)
 		{
@@ -264,14 +303,31 @@ public class Detection_phyto_squelette implements PlugIn {
 	 */
 	public void macroSquelette()
 	{
-		IJ.runMacro("run(\"Duplicate...\", \"duplicate\");run(\"Auto Threshold\", \"method=Otsu white stack\");run(\"Open\", \"stack\");run(\"Analyze Particles...\", \"size="+Integer.toString(minPixels)+"-"+Integer.toString(maxPixels)+" show=Masks clear stack\");setOption(\"BlackBackground\", true);run(\"Make Binary\", \"method=Default background=Light calculate black\");run(\"Skeletonize\", \"stack\");run(\"RGB Color\");");
+		IJ.runMacro("run(\"Skeletonize\", \"stack\");run(\"RGB Color\");");
+	}
+	public void macroRGB()
+	{
+		IJ.runMacro("run(\"RGB Color\");");
+	}
+	public void macro8bits()
+	{
+		IJ.runMacro("run(\"Duplicate...\", \"duplicate\");run(\"8-bit\");");
+	}
+	public void macroBinarise()
+	{
+		IJ.runMacro("run(\"Duplicate...\", \"duplicate\");run(\"Auto Threshold\", \"method=Otsu white stack\");run(\"Open\", \"stack\");run(\"Analyze Particles...\", \"size="+Integer.toString(minPixels)+"-"+Integer.toString(maxPixels)+" show=Masks clear stack\");setOption(\"BlackBackground\", true);run(\"Make Binary\", \"method=Default background=Light calculate black\");");
 	}
 	/**
 	 * Ferme les copies d'images utilisees pour les traitements intermediaires. 
 	 */
-	public void macroFermerImageCopie()
+	public void macroFermerImageCopie(int nbFois)
 	{
-		IJ.runMacro("run(\"Close\");run(\"Close\");run(\"RGB Color\");");
+		String str = "";
+		for (int i = 0; i < nbFois; i++)
+		{
+			str+= "run(\"Close\");";
+		}
+		IJ.runMacro(str+";run(\"RGB Color\");");
 	}
 	/**
 	 * Indique si deux squelettes se situent dans la meme zone, à une approximation pres. 
@@ -319,37 +375,188 @@ public class Detection_phyto_squelette implements PlugIn {
 			
 		}
 	}
-	/**
-	 * Encadre tous les squelettes pertinents du stack d'image sur une image précise du stack. 
-	 * @param indiceImage (Entier) Indice de l'image sur le quel on fait les encadrements.
-	 * @param couleur (Entier) Couleur en hexadecimal de l'encadrement
-	 */
-	public void encadrerTousLesSquelettesPertinents(int couleur)
+	public boolean sontAlignes(int x1, int y1, int x2, int y2, int x3, int y3, int approximation)
 	{
+		int calcul = (y3-y1)*(x2-x1)-(y2-y1)*(x3-x1);
+		return (Math.abs(calcul) <= approximation);
+	}
+	public double distance(int x1, int y1, int x2, int y2)
+	{
+		double xCarre = (double) (x2-x1)*(x2-x1);
+		double yCarre = (double) (y2-y1)*(y2-y1);
+		return (double) Math.sqrt(xCarre+yCarre);
+	}
+	public void marquerAlignements(ImageProcessor ip)
+	{
+		ArrayList <Integer> pointsDesSquelettes = new ArrayList <Integer>();
 		for (int i = 0; i < squelettesPertinents.size(); i++)
 		{
-			encadrer(moyenneIndice(squelettesPertinents.get(i)), 30, couleur);
+			pointsDesSquelettes.add(moyenneIndice(squelettesPertinents.get(i)));
+		}
+		int indice1, indice2, indice3, x1, x2, x3, y1, y2, y3;
+		for (int i = 0; i < squelettesPertinents.size(); i++)
+		{
+			indice1 = pointsDesSquelettes.get(i);
+			x1 = colonne(indice1);
+			y1 = ligne(indice1);
+			for (int j = 0; j < squelettesPertinents.size(); j++)
+			{
+				indice2 = pointsDesSquelettes.get(j);
+				x2 = colonne(indice2);
+				y2 = ligne(indice2);
+				for (int k = 0; k < squelettesPertinents.size(); k++)
+				{
+					indice3 = pointsDesSquelettes.get(k);
+					x3 = colonne(indice3);
+					y3 = ligne(indice3);
+					if (i != j && j != k)
+					{
+						if (sontAlignes(x1, y1, x2, y2, x3, y3, 10))
+						{
+							Line l;
+							if (distance(x1, y1, x2, y2) > distance(x1, y1, x3, y3))
+							{
+								if (distance(x1, y1, x2, y2) > distance(x2, y2, x3, y3))
+								{
+									l = new Line(x1, y1, x2, y2);
+									System.out.println("1");
+								}
+								else
+								{
+									l = new Line(x2, y2, x3, y3);
+									System.out.println("2");
+								}
+							}
+							else
+							{
+								if (distance(x1, y1, x3, y3) > distance(x2, y2, x3, y3))
+								{
+									l = new Line(x1, y1, x3, y3);
+									System.out.println("3");
+								}
+								else
+								{
+									l = new Line(x2, y2, x3, y3);
+									System.out.println("4");
+								}
+							}
+							l.drawPixels(ip);
+						}
+					}
+				}
+			}
 		}
 	}
 	/**
-	 * Encadre tous les squelettes pertinents du stack d'image sauf ceux d'une image précise.
-	 * @param indiceImage (Entier) Indice de l'image pour la quelle on ne suite pas d'encadrements. 
+	 * Determine si l'indice place en parametre est valide (tests de debordements). 
+	 * @param indice (Entier) L'indice a tester. 
+	 * @return (Booleen) Vrai si l'indice est valide, faux sinon. 
 	 */
-	public void encadrerTousLesSquelettesPertinentsSauf(int indiceImage, int couleur)
+	boolean estValide(int indice)
 	{
-		for (int i = 0; i < squelettesPertinents.size(); i++)
+		if (indice < 0 || indice >= taille)
 		{
-			int k = 0;
-			while (k < squelettesImages.get(indiceImage).size() && (!sontDansMemeZone(squelettesPertinents.get(i), squelettesImages.get(indiceImage).get(k), 50)
-					|| !(squelettesImages.get(indiceImage).get(k).intersections.size() >= minIntersection && squelettesImages.get(indiceImage).get(k).intersections.size() <= maxIntersection)))
+			return false;
+		}
+		return true;
+	}
+	public int surfaceObjet(int indiceObjet)
+	{
+		if (estValide(indiceObjet) && imageBinaire[indiceObjet] == 0xffffff)
+		{
+			imageBinaire[indiceObjet] = 0xfffffe;
+			return (surfaceObjet(indiceObjet+1)+surfaceObjet(indiceObjet-1)+
+					surfaceObjet(indiceObjet-nbColonnes)+surfaceObjet(indiceObjet+nbColonnes)+
+					surfaceObjet(indiceObjet-nbColonnes+1)+surfaceObjet(indiceObjet+nbColonnes+1)+
+					surfaceObjet(indiceObjet-nbColonnes-1)+surfaceObjet(indiceObjet+nbColonnes-1))+1;
+		}
+		else
+		{
+			return 0;
+		}
+	}
+	public void calculerSurfaceObjetsInterets(ImageStack stk)
+	{
+		for (int numeroImage = 0; numeroImage < squelettesImages.size(); numeroImage++)
+		{
+			imageBinaire = (int[]) stk.getProcessor(numeroImage+1).getPixels();
+			blanchir(imageBinaire);
+			for (int i = 0; i < squelettesImages.get(numeroImage).size(); i++)
 			{
-				k++;
-			}
-			if (k == squelettesImages.get(indiceImage).size())
-			{
-				encadrer(moyenneIndice(squelettesPertinents.get(i)), 30, couleur);
+				surfaceSquelettesPertinents.add(new ArrayList <Integer>());
+				if (squelettesImages.get(numeroImage).get(i).intersections.size() >= minIntersection && squelettesImages.get(numeroImage).get(i).intersections.size() <= maxIntersection)
+				{
+					surfaceSquelettesPertinents.get(numeroImage).add(surfaceObjet(moyenneIndice(squelettesImages.get(numeroImage).get(i))));
+				}
 			}
 		}
+	}
+	public void afficherSurfaces()
+	{
+		int surface, surfaceTotale, taille;
+		for (int numeroImage = 0; numeroImage < squelettesImages.size(); numeroImage++)
+		{
+			System.out.println("Image numero "+Integer.toString(numeroImage+1)+"\n");
+			taille = surfaceSquelettesPertinents.get(numeroImage).size();
+			surfaceTotale = 0;
+			int i;
+			for (i = 0; i < taille; i++)
+			{
+				surface = surfaceSquelettesPertinents.get(numeroImage).get(i);
+				surfaceTotale += surface;
+				System.out.println("Objet "+Integer.toString(i+1)+" | surface : "+Integer.toString(surface)+"\n");
+			}
+			if (i == 0)
+			{
+				System.out.println("Aucun objet détecté. \n");
+			}
+			else
+			{
+				System.out.println("Surface moyenne : "+Integer.toString((int) surfaceTotale/taille)+"\n");
+			}
+		}
+	}
+	public void initialiserVariables()
+	{
+		nbElementsPertinents = new ArrayList <Integer>();
+		squelettesPertinents = new ArrayList <squelette>();
+		surfaceSquelettesPertinents = new ArrayList <ArrayList <Integer>>();
+		squelettesImages = new ArrayList <ArrayList <squelette>>();
+	}
+	public ImageStack chargerImageStack()
+	{
+		ImagePlus imp = IJ.getImage();
+		ImageProcessor im  = imp.getProcessor();
+		nbColonnes = im.getWidth();
+		nbLignes = im.getHeight();
+		taille = nbColonnes*nbLignes;
+		ImageStack stk = imp.getImageStack();
+		return stk;
+	}
+	public void determinerSquelettesDuStack(ImageStack stk)
+	{
+		for (int i = 1; i <= stk.getSize(); i++)
+		{
+			squelettes = new ArrayList <squelette>();
+			pixels = (int[]) stk.getPixels(i);
+			blanchir(pixels);
+			determinerSquelettes();
+			squelettesImages.add(squelettes);
+			nbElementsPertinents.add(0); // initialise l'ArrayList a 0
+		}	
+	}
+	public void encadrerObjetsDuStack(ImageStack stk)
+	{
+		for (int i = 1; i <= stk.getSize(); i++)
+		{
+			imageOrigine = (int[]) stk.getPixels(i);
+			encadrerSquelettesAvecNIntersections(i-1, minIntersection, maxIntersection, 0x00ff00);
+			compterElementsPertinents(i-1, minIntersection, maxIntersection);
+		}
+		int meilleureImage = calculerMeilleureImage();
+		imageOrigine = (int[]) stk.getPixels(meilleureImage);
+		determinerTousLesSquelettesPertinents();
+		encadrerTousLesSquelettesPertinentsSauf(meilleureImage-1, 0xff0000);
 	}
 	/**
 	 * Methode principale qui demande a l'utilisateur les parametres pour detecter les objets pertinents puis analyse la ou les image(s) pour marquer ces objets en les encadrant. 
@@ -357,46 +564,27 @@ public class Detection_phyto_squelette implements PlugIn {
 	public void run(String arg) {
 		if (lireParam())
 		{
-			nbElementsPertinents = new ArrayList <Integer>();
-			squelettesPertinents = new ArrayList <squelette>();
+			initialiserVariables();
+			macroBinarise();
 			macroSquelette();
-			ImagePlus imp = IJ.getImage();
-			ImageProcessor im  = imp.getProcessor();
-			nbColonnes = im.getWidth();
-			nbLignes = im.getHeight();
-			taille = nbColonnes*nbLignes;
-			ImageStack stk = imp.getImageStack();
-			squelettesImages = new ArrayList <ArrayList <squelette>>();
-			/*
-			 * Attention les indices d'un stack d'images commencent a 1, d'ou les boucles qui vont de 1 à la taille du stack.
-			 * Cependant les indices des ArrayLists commencent a 0, d'ou les i-1 lors des encadrements. 
-			 */
-			for (int i = 1; i <= stk.getSize(); i++)
-			{
-				squelettes = new ArrayList <squelette>();
-				pixels = (int[]) stk.getPixels(i);
-				blanchir();
-				determinerSquelettes();
-				squelettesImages.add(squelettes);
-				nbElementsPertinents.add(0); // initialise l'ArrayList a 0
-			}	
-			macroFermerImageCopie();
+			macroRGB();
+			ImageStack stk = chargerImageStack();
+			determinerSquelettesDuStack(stk);
+			macroFermerImageCopie(2);
 			ImagePlus imp2 = IJ.getImage();
 			ImageStack stk2 = imp2.getImageStack();
-			for (int i = 1; i <= stk2.getSize(); i++)
-			{
-				imageOrigine = (int[]) stk2.getPixels(i);
-				//encadrerSquelettes(i-1, 0xffffff);
-				encadrerSquelettesAvecNIntersections(i-1, minIntersection, maxIntersection, 0x00ff00);
-				compterElementsPertinents(i-1, minIntersection, maxIntersection);
-			}
+			encadrerObjetsDuStack(stk2);
 			int meilleureImage = calculerMeilleureImage();
-			imageOrigine = (int[]) stk2.getPixels(meilleureImage);
-			determinerTousLesSquelettesPertinents();
-			encadrerTousLesSquelettesPertinentsSauf(meilleureImage-1, 0xff0000);
+			macro8bits();
+			macroBinarise();
+			macroRGB();
+			ImagePlus imp3 = IJ.getImage();
+			ImageStack stk3 = imp3.getImageStack();
+			calculerSurfaceObjetsInterets(stk3);
+			afficherSurfaces();
+			macroFermerImageCopie(3);
 			IJ.showMessage("L'image "+Integer.toString(meilleureImage)+" contient le plus grand nombre d'objets ("+Integer.toString(nbElementsPertinents.get(meilleureImage-1))+").");
 		}
-		
 	}
 	/**
 	 * Permet a l'utilisateur de rentrer les parametres d'analyse des images. 
