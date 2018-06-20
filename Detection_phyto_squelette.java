@@ -16,7 +16,10 @@ import ij.measure.ResultsTable;
  * la taille de l'objet, 
  * la longueur du squelette et,
  * le nombre d'intersections dans le squelettes.
- * Elle encadre en rouge les objets repondant aux criteres. 
+ * Elle
+ * encadre en vert les objets repondant aux criteres,
+ * determine la meilleure image (celle avec le plus d'objets detectes),
+ * genere un tableau d'analyse avec plusieurs donnees (telles que le nombre d'objets detectes, les alignements, etc).
  * @author e1502316 Nicola Wilser
  *
  */
@@ -25,15 +28,44 @@ public class Detection_phyto_squelette implements PlugIn {
 	/**
 	 * Tableau des pixels de l'image que l'on est en train de manipuler. 
 	 */
+	/*
+	 * Il s'agit du tableau que l'on utilise pour effectuer les traitements
+	 * comme la binarisation, la squelettisation, etc. Cette image n'est PAS
+	 * l'image resultante qui est affichee a l'utilisateur. 
+	 */
 	private int[] pixels;
 	/**
 	 * Tableau des pixels de l'image d'origine, sans les alternations de traitements et d'analyse. 
 	 */
+	/*
+	 * Il s'agit du tableau avec les pixels de l'image d'origine. C'est ce tableau
+	 * que l'on va modifier pour les anotations que l'on souhaite transmettre a
+	 * l'utilisateur, comme les encadrements et les alignements. Il s'agit de l'image
+	 * resultat qui sera affichee a la fin. 
+	 */
 	private int[] imageOrigine;
+	/**
+	 * Tableau des pixels de l'image binarisee. 
+	 */
+	/*
+	 * Il s'agit du tableau avec les pixels permettant d'effectuer diverses
+	 * operations comme la determination de surface et de perimetre des
+	 * objets, que l'on ne peut effectuer correctement sur une image non
+	 * binarisee. C'est un tableau utile pour les traitements, l'utilisateur
+	 * ne le verra pas. 
+	 */
+	private int[] imageBinaire;
+	/*
+	 * Les trois variables suivantes contiennent les informations permettant
+	 * de manipuler l'image, ainsi on a son nombre de colonnes, son nombre
+	 * de lignes et la taille globale de l'image en pixels. Ces donnees sont
+	 * communes pour toutes les images du stack, de meme que pour les images
+	 * intermediaires de traitement, aucune transformation sur les dimensions
+	 * n'est realisable sans faire planter le programme. 
+	 */
 	/**
 	 * Nombre de colonnes de l'image traitee. 
 	 */
-	private int[] imageBinaire;
 	private int nbColonnes;
 	/**
 	 * Nombre de lignes de l'image traitee.
@@ -44,7 +76,7 @@ public class Detection_phyto_squelette implements PlugIn {
 	 */
 	private int taille;
 	/**
-	 * Tableau des squelettes de l'image actuelle. 
+	 * Contient les squelettes de l'image actuelle. 
 	 */
 	private ArrayList <squelette> squelettes; 
 	/**
@@ -52,14 +84,14 @@ public class Detection_phyto_squelette implements PlugIn {
 	 */
 	private ArrayList <Integer> nbElementsPertinents;
 	/**
-	 * Tableau de tableaux de squelettes pour chaque image de l'ImageStack traitees.
+	 * Contient les tableaux de squelettes pour chaque image de l'ImageStack traitees.
 	 */
 	/*
 	 * Aucune obligation d'utiliser un stack d'images, il est tout à fait possible d'utiliser une image unique. 
 	 */
-	private ArrayList <ArrayList <squelette>> squelettesImages; // les squelettes de chaque image du stack
+	private ArrayList <ArrayList <squelette>> squelettesImages; 
 	/**
-	 * Contient tous les squelettes pertinents du stack d'images. 
+	 * Contient tous les squelettes pertinents du stack d'images (sans distinction d'images). 
 	 */
 	private ArrayList <squelette> squelettesPertinents; 
 	/**
@@ -70,7 +102,20 @@ public class Detection_phyto_squelette implements PlugIn {
 	 * Contient le perimetre des objets pertinents de chaque image. 
 	 */
 	private ArrayList <ArrayList <Integer>> perimetreSquelettesPertinents;
+	/**
+	 * Contient les squelettes pertinents de chaque image, separes par image. 
+	 */
+	/*
+	 * Premier indice pour l'image et deuxieme pour le squelette souhaite de l'image.
+	 */
 	private ArrayList <ArrayList <squelette>> squelettesPertinentsImages;
+	/**
+	 * Contient les differents alignements d'objets pertinents de chaque image du stack.
+	 */
+	/*
+	 * Premier indice pour l'image, deuxieme indice pour l'alignement de l'image et
+	 * troisieme indice pour l'objet de l'alignement. 
+	 */
 	private ArrayList <ArrayList <ArrayList <squelette>>> alignementsImages;
 	/*
 	 * Les variables suivant sont demandées lors de l'appel de la fonction run(), elles sont rentrées par l'utilisateur.
@@ -347,10 +392,10 @@ public class Detection_phyto_squelette implements PlugIn {
 		IJ.runMacro(str+";run(\"RGB Color\");");
 	}
 	/**
-	 * Indique si deux squelettes se situent dans la meme zone, à une approximation pres. 
-	 * @param s1 (squelette) Premier squelette
-	 * @param s2 (squelette) Deuxieme squelette
-	 * @param approximation (Entier) Approximation toleree 
+	 * Indique si deux squelettes se situent dans la meme zone, a une approximation pres. 
+	 * @param s1 (squelette) Premier squelette.
+	 * @param s2 (squelette) Deuxieme squelette.
+	 * @param approximation (Entier) Approximation toleree .
 	 * @return (Booleen) Vrai si les deux squelettes sont dans la meme zone, faux sinon. 
 	 */
 	public boolean sontDansMemeZone(squelette s1, squelette s2, int approximation)
@@ -367,6 +412,14 @@ public class Detection_phyto_squelette implements PlugIn {
 		}
 		return false;
 	}
+	/**
+	 * Determine si trois squelettes sont alignes, a une approximation pres. 
+	 * @param s1 (squelette) Premier squelette. 
+	 * @param s2 (squelette) Deuxieme squelette.
+	 * @param s3 (squelette) Troisieme squelette.
+	 * @param approximation (Entier) Approximation toleree. 
+	 * @return (Booleen) Vrai si les trois squelettes sont alignes, faux sinon. 
+	 */
 	public boolean sontAlignes(squelette s1, squelette s2, squelette s3, int approximation)
 	{
 		int indiceMoyenS1 = moyenneIndice(s1);
@@ -405,6 +458,10 @@ public class Detection_phyto_squelette implements PlugIn {
 			
 		}
 	}
+	/**
+	 * Determine tous les alignements d'objets pertinents du stack d'images et les stocke dans une ArrayList. 
+	 * @param approximation (Entier) Approximation toleree. 
+	 */
 	public void determinerAlignements(int approximation)
 	{
 		for (int i = 0; i < squelettesPertinentsImages.size(); i++)
@@ -458,6 +515,11 @@ public class Detection_phyto_squelette implements PlugIn {
 			}
 		}
 	}
+	/**
+	 * Determine et renvoie le plus grand alignement d'objets dans une image. 
+	 * @param indiceImage (Entier) Indice de l'image. 
+	 * @return (Entier) Nombre d'objets contenus dans le plus grand alignement. 
+	 */
 	public int plusGrandAlignement(int indiceImage)
 	{
 		int max = 0;
@@ -470,6 +532,12 @@ public class Detection_phyto_squelette implements PlugIn {
 		}
 		return max;
 	}
+	/**
+	 * Calcule et renvoie la distance en pixels entre deux squelettes. 
+	 * @param s1 (squelette) Premier squelette. 
+	 * @param s2 (squelette) Deuxieme squelette. 
+	 * @return (Entier) Distance entre les deux squelettes. 
+	 */
 	public int distance(squelette s1, squelette s2)
 	{
 		int indiceMoyenS1 = moyenneIndice(s1);
@@ -550,6 +618,11 @@ public class Detection_phyto_squelette implements PlugIn {
 			return 0;
 		}
 	}
+	/**
+	 * Calcule et renvoie le perimetre en pixels d'un objet se trouvant a un indice. 
+	 * @param indiceObjet (Entier) Indice de l'objet. 
+	 * @return (Entier) Perimetre en pixels de l'objet.
+	 */
 	public int perimetreObjet(int indiceObjet)
 	{
 		if (estValide(indiceObjet) && imageBinaire[indiceObjet] == 0xffffff)
@@ -575,6 +648,12 @@ public class Detection_phyto_squelette implements PlugIn {
 			return 0;
 		}
 	}
+	/**
+	 * Determine si un objet d'une image est pertinent (correspond au critere de tailles et d'intersections). 
+	 * @param numeroImage (Entier) Indice de l'image du stack sur la quelle se trouve l'objet. 
+	 * @param indiceObjet (Entier) Indice de l'objet a analyser. 
+	 * @return (Booleen) Vrai si l'objet est pertinent, faux sinon. 
+	 */
 	public boolean estPertinent(int numeroImage, int indiceObjet)
 	{
 		return (squelettesImages.get(numeroImage).get(indiceObjet).intersections.size() >= minIntersection && squelettesImages.get(numeroImage).get(indiceObjet).intersections.size() <= maxIntersection);
@@ -597,6 +676,10 @@ public class Detection_phyto_squelette implements PlugIn {
 		}
 		blanchir(imageBinaire);
 	}
+	/**
+	 * Calcule et remplit l'ArrayList perimetreSquelettesPertinents avec le perimetre de tous les objets de tous les images du stack. 
+	 * @param stk (ImageStack) Stack d'images que l'on souhaite analyser.
+	 */
 	public void calculerPerimetreObjetsInterets(ImageStack stk)
 	{
 		for (int numeroImage = 0; numeroImage < squelettesImages.size(); numeroImage++)
@@ -639,10 +722,24 @@ public class Detection_phyto_squelette implements PlugIn {
 			}
 		}
 	}
+	/**
+	 * Calcule la roundness d'un objet a partie d'une image et d'un objet. 
+	 * @param indiceImage (Entier) Indice de l'image. 
+	 * @param indiceSquelette (Entier) Indice de l'objet. 
+	 * @return (Double) Roundness de l'objet. 
+	 */
 	public double roundness(int indiceImage, int indiceSquelette)
 	{
-		return (double) (surfaceSquelettesPertinents.get(indiceImage).get(indiceSquelette)*4*Math.PI)/(perimetreSquelettesPertinents.get(indiceImage).get(indiceSquelette)*perimetreSquelettesPertinents.get(indiceImage).get(indiceSquelette));
+		int surface = surfaceSquelettesPertinents.get(indiceImage).get(indiceSquelette);
+		int perimetre = perimetreSquelettesPertinents.get(indiceImage).get(indiceSquelette);
+		return roundness2(surface, perimetre);
 	}
+	/**
+	 * Calcule la roundness a partir d'une surface et d'un perimetre. 
+	 * @param surface (Entier) Surface de l'objet. 
+	 * @param perimetre (Entier) Perimetre de l'objet. 
+	 * @return (Double) Roundness de l'objet. 
+	 */
 	public double roundness2(int surface, int perimetre)
 	{
 		return (double) ((surface*4*Math.PI)/(perimetre*perimetre));
@@ -701,6 +798,9 @@ public class Detection_phyto_squelette implements PlugIn {
 		macroFermerImageCopie(3);
 		rt.show("Résultats de l'analyse");
 	}
+	/**
+	 * Determine les squelettes pertinents pour chaque image et les stocke dans une ArrayList. 
+	 */
 	public void determinerSquelettesPertinents()
 	{
 		for (int i = 0; i < squelettesImages.size(); i++)

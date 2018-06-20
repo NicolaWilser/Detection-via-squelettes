@@ -68,7 +68,9 @@ public class squelette {
 	{
 		return nbColonnes*ligne + colonne;
 	}
-
+	/**
+	 * Constructeur par defaut. 
+	 */
 	public squelette()
 	{
 	}
@@ -91,6 +93,12 @@ public class squelette {
 		verifierAutourDuPoint(indice);
 		determinerBranches();
 	}
+	/**
+	 * Determine et renvoie si deux objets situes a deux indices sont voisins non confondus. 
+	 * @param indice1 (Entier) Indice du premier objet. 
+	 * @param indice2 (Entier) Indice du premer objet. 
+	 * @return (Booleen) Vrai s'ils sont voisins, faux sinon. 
+	 */
 	public boolean sontVoisins(int indice1, int indice2)
 	{
 		int x1 = colonne(indice1);
@@ -99,6 +107,11 @@ public class squelette {
 		int y2 = ligne(indice2);
 		return ((Math.abs(x1-x2) == 1 && Math.abs(y1-y2) == 1) || (Math.abs(x1-x2) == 1 && Math.abs(y1-y2) == 0) || (Math.abs(x1-x2) == 0 && Math.abs(y1-y2) == 1));
 	}
+	/**
+	 * Determine et renvoie si un objet situe a un indice est une intersection. 
+	 * @param indicePoint (Entier) Indice de l'objet. 
+	 * @return (Booleen) Vrai si c'est une intersection, faux sinon. 
+	 */
 	public boolean estDansIntersections(int indicePoint)
 	{
 		for (int i = 0; i < intersectionsDev.size(); i++)
@@ -110,18 +123,35 @@ public class squelette {
 		}
 		return false;
 	}
+	/**
+	 * Renvoie le nombre de branches du squelette. 
+	 * @return (Entier) Le nombre de branches. 
+	 */
 	public int nombreBranches()
 	{
 		return branches.size();
 	}
+	/**
+	 * Renvoie la longueur du squelette. 
+	 * @return (Entier) La longueur du squelette. 
+	 */
 	public int longueurSquelette()
 	{
 		return points.size();
 	}
+	/**
+	 * Renvoie la longueur d'une branche situe a un indice. 
+	 * @param indice (Entier) Indice de la branche. 
+	 * @return (Entier) La longue de la branche. 
+	 */
 	public int longueurBrancheIndice(int indice)
 	{
 		return branches.get(indice).size();
 	}
+	/**
+	 * Calcule et renvoie la moyenne des longueurs des branches. 
+	 * @return (Entier) La moyenne des longueurs des branches. 
+	 */
 	public int moyenneLongueurBranche()
 	{
 		int longueur;
@@ -133,6 +163,9 @@ public class squelette {
 		}
 		return (int) longueurTotale/nombreBranches();
 	}
+	/**
+	 * Determine les branches d'un squelette et les stocke dans une ArrayList. 
+	 */
 	public void determinerBranches()
 	{
 		ArrayList <Boolean> marque = new ArrayList <Boolean>();
