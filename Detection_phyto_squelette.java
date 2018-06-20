@@ -142,6 +142,10 @@ public class Detection_phyto_squelette implements PlugIn {
 	 */
 	private int maxPixels;
 	/**
+	 * Correspond a une equivalence d'erreur toleree pour considerer l'alignement entre les objets. 
+	 */
+	private int facteurAlignement;
+	/**
 	 * Renvoie la colonne pour un tableau 2D correspondante a un indice de tableau 1D. 
 	 * @param indice (Entier) L'indice du tableau 1D.
 	 * @return (Entier) La colonne equivalente en tableau 2D.
@@ -656,7 +660,8 @@ public class Detection_phyto_squelette implements PlugIn {
 	 */
 	public boolean estPertinent(int numeroImage, int indiceObjet)
 	{
-		return (squelettesImages.get(numeroImage).get(indiceObjet).intersections.size() >= minIntersection && squelettesImages.get(numeroImage).get(indiceObjet).intersections.size() <= maxIntersection);
+		boolean intersectionValide = (squelettesImages.get(numeroImage).get(indiceObjet).intersections.size() >= minIntersection && squelettesImages.get(numeroImage).get(indiceObjet).intersections.size() <= maxIntersection);
+		return intersectionValide;
 	}
 	/**
 	 * Calcule et remplit l'ArrayList surfaceSquelettesPertinents avec la surface de tous les objets de tous les images du stack. 
@@ -888,13 +893,13 @@ public class Detection_phyto_squelette implements PlugIn {
 			ImageStack stk = chargerImageStack();
 			determinerSquelettesDuStack(stk);
 			determinerSquelettesPertinents();
-			determinerAlignements(500);
+			determinerAlignements(facteurAlignement );
 			macroFermerImageCopie(2);
 			ImagePlus imp2 = IJ.getImage();
 			ImageStack stk2 = imp2.getImageStack();
 			encadrerObjetsDuStack(stk2);
 			marquerAlignements(imp2);
-			int meilleureImage = calculerMeilleureImage();
+			//int meilleureImage = calculerMeilleureImage();
 			macro8bits();
 			macroBinarise();
 			macroRGB();
@@ -903,7 +908,7 @@ public class Detection_phyto_squelette implements PlugIn {
 			calculerSurfaceObjetsInterets(stk3);
 			calculerPerimetreObjetsInterets(stk3);
 			tableauDeResultats();
-			IJ.showMessage("L'image "+Integer.toString(meilleureImage)+" contient le plus grand nombre d'objets ("+Integer.toString(nbElementsPertinents.get(meilleureImage-1))+").");
+			//IJ.showMessage("L'image "+Integer.toString(meilleureImage)+" contient le plus grand nombre d'objets ("+Integer.toString(nbElementsPertinents.get(meilleureImage-1))+").");
 		}
 	}
 	/**
@@ -917,6 +922,7 @@ public class Detection_phyto_squelette implements PlugIn {
 		gd.addNumericField("Taille du squelette min pour le considérer", 10, 0);
 		gd.addNumericField("Nombre d'intersections min dans le squelette", 2, 0);
 		gd.addNumericField("Nombre d'intersections max dans le squelette", 3, 0);
+		gd.addNumericField("Facteur d'alignement toleree", 500, 0);
 		gd.showDialog();
 		if (gd.wasCanceled()) {
 			return false;
@@ -926,6 +932,7 @@ public class Detection_phyto_squelette implements PlugIn {
 		tailleMinSquelette = (int) gd.getNextNumber();
 		minIntersection = (int) gd.getNextNumber();
 		maxIntersection = (int) gd.getNextNumber();
+		facteurAlignement = (int) gd.getNextNumber();
 		return true;
 	}
 }
