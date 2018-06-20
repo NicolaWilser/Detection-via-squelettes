@@ -641,7 +641,11 @@ public class Detection_phyto_squelette implements PlugIn {
 	}
 	public double roundness(int indiceImage, int indiceSquelette)
 	{
-		return (surfaceSquelettesPertinents.get(indiceImage).get(indiceSquelette)*4*Math.PI)/(perimetreSquelettesPertinents.get(indiceImage).get(indiceSquelette)*perimetreSquelettesPertinents.get(indiceImage).get(indiceSquelette));
+		return (double) (surfaceSquelettesPertinents.get(indiceImage).get(indiceSquelette)*4*Math.PI)/(perimetreSquelettesPertinents.get(indiceImage).get(indiceSquelette)*perimetreSquelettesPertinents.get(indiceImage).get(indiceSquelette));
+	}
+	public double roundness2(int surface, int perimetre)
+	{
+		return (double) ((surface*4*Math.PI)/(perimetre*perimetre));
 	}
 	/**
 	 * Cree et affiche un tableau de resultats contenant diverses informations de l'analyse effectuee sur le stack d'images. 
@@ -650,7 +654,6 @@ public class Detection_phyto_squelette implements PlugIn {
 	{
 		ResultsTable rt = new ResultsTable(squelettesImages.size()); 
 		int surface, surfaceTotale, perimetre, perimetreTotal, nbBranches, tailleMoyenneBranches, nbBranchesTotal, tailleMoyenneBranchesTotale, taille;
-		double roundness, roundnessTotale;
 		for (int numeroImage = 0; numeroImage < squelettesImages.size(); numeroImage++)
 		{
 			rt.setValue("Image", numeroImage, numeroImage+1);
@@ -658,7 +661,6 @@ public class Detection_phyto_squelette implements PlugIn {
 			rt.setValue("Nombre d'objets détectés", numeroImage, taille);
 			surfaceTotale = 0;
 			perimetreTotal = 0;
-			roundnessTotale = 0;
 			nbBranchesTotal = 0;
 			tailleMoyenneBranchesTotale = 0; 
 			int i;
@@ -668,18 +670,18 @@ public class Detection_phyto_squelette implements PlugIn {
 				perimetre = perimetreSquelettesPertinents.get(numeroImage).get(i);
 				nbBranches = squelettesPertinentsImages.get(numeroImage).get(i).nombreBranches();
 				tailleMoyenneBranches = squelettesPertinentsImages.get(numeroImage).get(i).moyenneLongueurBranche();
-				roundness = roundness(numeroImage, i);
 				surfaceTotale += surface;
 				perimetreTotal += perimetre;
-				roundnessTotale += roundness;
 				nbBranchesTotal += nbBranches;
 				tailleMoyenneBranchesTotale += tailleMoyenneBranches;
 			}
 			if (i != 0)
 			{
-				rt.setValue("Surface moyenne", numeroImage, surfaceTotale/taille);
-				rt.setValue("Perimetre moyen", numeroImage, perimetreTotal/taille);
-				rt.setValue("Roundness moyenne", numeroImage, roundnessTotale/taille);
+				int surfaceMoyenne = surfaceTotale/taille;
+				int perimetreMoyen = perimetreTotal/taille;
+				rt.setValue("Surface moyenne", numeroImage, surfaceMoyenne);
+				rt.setValue("Perimetre moyen", numeroImage, perimetreMoyen);
+				rt.setValue("Roundness moyenne", numeroImage, roundness2(surfaceMoyenne, perimetreMoyen));
 				rt.setValue("Nb de branches moyen", numeroImage, (double) nbBranchesTotal/((double) taille));
 				rt.setValue("Taille de branche moyenne", numeroImage, tailleMoyenneBranchesTotale/taille);
 				rt.setValue("Nombre d'alignements", numeroImage, alignementsImages.get(numeroImage).size());
