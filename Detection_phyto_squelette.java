@@ -71,6 +71,7 @@ public class Detection_phyto_squelette implements PlugIn {
 	 */
 	private ArrayList <ArrayList <Integer>> perimetreSquelettesPertinents;
 	private ArrayList <ArrayList <squelette>> squelettesPertinentsImages;
+	private ArrayList <ArrayList <ArrayList <squelette>>> alignementsImages;
 	/*
 	 * Les variables suivant sont demandées lors de l'appel de la fonction run(), elles sont rentrées par l'utilisateur.
 	 * Elles permettent de déterminer les formes à marquer. 
@@ -238,7 +239,7 @@ public class Detection_phyto_squelette implements PlugIn {
 		for (int i = 0; i < squelettesPertinents.size(); i++)
 		{
 			int k = 0;
-			while (k < squelettesImages.get(indiceImage).size() && (!sontDansMemeZone(squelettesPertinents.get(i), squelettesImages.get(indiceImage).get(k), 50)
+			while (k < squelettesImages.get(indiceImage).size() && (!sontDansMemeZone(squelettesPertinents.get(i), squelettesImages.get(indiceImage).get(k), 15)
 					|| !(estPertinent(indiceImage, k))))
 			{
 				k++;
@@ -366,6 +367,19 @@ public class Detection_phyto_squelette implements PlugIn {
 		}
 		return false;
 	}
+	public boolean sontAlignes(squelette s1, squelette s2, squelette s3, int approximation)
+	{
+		int indiceMoyenS1 = moyenneIndice(s1);
+		int indiceMoyenS2 = moyenneIndice(s2);
+		int indiceMoyenS3 = moyenneIndice(s3);
+		int x1 = colonne(indiceMoyenS1);
+		int y1 = ligne(indiceMoyenS1);
+		int x2 = colonne(indiceMoyenS2);
+		int y2 = ligne(indiceMoyenS2);
+		int x3 = colonne(indiceMoyenS3);
+		int y3 = ligne(indiceMoyenS3);
+		return Utilitaire.sontAlignes(x1, y1, x2, y2, x3, y3, approximation);
+	}
 	/**
 	 * Determine tous les squelettes pertinents du stack d'images et les stocke dans une ArrayList. 
 	 */
@@ -391,68 +405,115 @@ public class Detection_phyto_squelette implements PlugIn {
 			
 		}
 	}
+	public void determinerAlignements(int approximation)
+	{
+		for (int i = 0; i < squelettesPertinentsImages.size(); i++)
+		{
+			alignementsImages.add(new ArrayList <ArrayList <squelette>>());
+			ArrayList <Boolean> marque = new ArrayList <Boolean>();
+			for (int j = 0; j < squelettesPertinentsImages.get(i).size(); j++)
+			{
+				marque.add(false);
+			}
+			int taille = squelettesPertinentsImages.get(i).size();
+			for (int s1 = 0; s1 < taille; s1++)
+			{
+				if (marque.get(s1) == false)
+				{
+					for (int s2 = 0; s2 < taille; s2++)
+					{
+						if (marque.get(s2) == false && s2 != s1)
+						{
+							for (int s3 = 0; s3 < taille; s3++)
+							{
+								if (marque.get(s3) == false && s3 != s1 && s3 != s2)
+								{
+									if (sontAlignes(squelettesPertinentsImages.get(i).get(s1), squelettesPertinentsImages.get(i).get(s2), squelettesPertinentsImages.get(i).get(s3), approximation))
+									{
+										marque.set(s1, true);
+										marque.set(s2, true);
+										marque.set(s3, true);
+										alignementsImages.get(i).add(new ArrayList <squelette>());
+										int dernierIndice = alignementsImages.get(i).size();
+										alignementsImages.get(i).get(dernierIndice-1).add(squelettesPertinentsImages.get(i).get(s1));
+										alignementsImages.get(i).get(dernierIndice-1).add(squelettesPertinentsImages.get(i).get(s2));
+										alignementsImages.get(i).get(dernierIndice-1).add(squelettesPertinentsImages.get(i).get(s3));
+										for (int s4 = 0; s4 < taille; s4++)
+										{
+											if (marque.get(s4) == false)
+											{
+												if (sontAlignes(squelettesPertinentsImages.get(i).get(s2), squelettesPertinentsImages.get(i).get(s3), squelettesPertinentsImages.get(i).get(s4), approximation))
+												{
+													marque.set(s4, true);
+													alignementsImages.get(i).get(dernierIndice-1).add(squelettesPertinentsImages.get(i).get(s4));
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	public int plusGrandAlignement(int indiceImage)
+	{
+		int max = 0;
+		for (int i = 0; i < alignementsImages.get(indiceImage).size(); i++)
+		{
+			if (alignementsImages.get(indiceImage).get(i).size() > max)
+			{
+				max = alignementsImages.get(indiceImage).get(i).size();
+			}
+		}
+		return max;
+	}
+	public int distance(squelette s1, squelette s2)
+	{
+		int indiceMoyenS1 = moyenneIndice(s1);
+		int indiceMoyenS2 = moyenneIndice(s2);
+		int x1 = colonne(indiceMoyenS1);
+		int y1 = ligne(indiceMoyenS1);
+		int x2 = colonne(indiceMoyenS2);
+		int y2 = ligne(indiceMoyenS2);
+		return (int) Utilitaire.distance(x1, y1, x2, y2);
+	}
 	/**
 	 * Marque les differents alignements entre les points s'il y en a. 
 	 * @param ip (ImageProcessor) ImageProcessor pour la quelle on veut marquer les alignements. 
 	 */
-	public void marquerAlignements(ImageProcessor ip)
+	public void marquerAlignements(ImagePlus ip)
 	{
-		ArrayList <Integer> pointsDesSquelettes = new ArrayList <Integer>();
-		for (int i = 0; i < squelettesPertinents.size(); i++)
+		ImageStack stk = ip.getStack();
+		for (int i = 1; i <= stk.getSize(); i++)
 		{
-			pointsDesSquelettes.add(moyenneIndice(squelettesPertinents.get(i)));
-		}
-		int indice1, indice2, indice3, x1, x2, x3, y1, y2, y3;
-		for (int i = 0; i < squelettesPertinents.size(); i++)
-		{
-			indice1 = pointsDesSquelettes.get(i);
-			x1 = colonne(indice1);
-			y1 = ligne(indice1);
-			for (int j = 0; j < squelettesPertinents.size(); j++)
+			ImageProcessor imp = stk.getProcessor(i);
+			for (int al = 0; al < alignementsImages.get(i-1).size(); al++)
 			{
-				indice2 = pointsDesSquelettes.get(j);
-				x2 = colonne(indice2);
-				y2 = ligne(indice2);
-				for (int k = 0; k < squelettesPertinents.size(); k++)
+				int distanceMax = 0;
+				int sMax1, sMax2;
+				sMax1 = 0;
+				sMax2 = 0;
+				for (int s1 = 0; s1 < alignementsImages.get(i-1).get(al).size(); s1++)
 				{
-					indice3 = pointsDesSquelettes.get(k);
-					x3 = colonne(indice3);
-					y3 = ligne(indice3);
-					if (i != j && j != k)
+					for (int s2 = 0; s2 < alignementsImages.get(i-1).get(al).size(); s2++)
 					{
-						if (Utilitaire.sontAlignes(x1, y1, x2, y2, x3, y3, 10))
+						if (distance(alignementsImages.get(i-1).get(al).get(s1), alignementsImages.get(i-1).get(al).get(s2)) >= distanceMax)
 						{
-							Line l;
-							if (Utilitaire.distance(x1, y1, x2, y2) > Utilitaire.distance(x1, y1, x3, y3))
-							{
-								if (Utilitaire.distance(x1, y1, x2, y2) > Utilitaire.distance(x2, y2, x3, y3))
-								{
-									l = new Line(x1, y1, x2, y2);
-									System.out.println("1");
-								}
-								else
-								{
-									l = new Line(x2, y2, x3, y3);
-									System.out.println("2");
-								}
-							}
-							else
-							{
-								if (Utilitaire.distance(x1, y1, x3, y3) > Utilitaire.distance(x2, y2, x3, y3))
-								{
-									l = new Line(x1, y1, x3, y3);
-									System.out.println("3");
-								}
-								else
-								{
-									l = new Line(x2, y2, x3, y3);
-									System.out.println("4");
-								}
-							}
-							l.drawPixels(ip);
+							sMax1 = s1;
+							sMax2 = s2;
+							distanceMax = distance(alignementsImages.get(i-1).get(al).get(s1), alignementsImages.get(i-1).get(al).get(s2));
 						}
 					}
 				}
+				int x1 = colonne(moyenneIndice(alignementsImages.get(i-1).get(al).get(sMax1)));
+				int x2 = colonne(moyenneIndice(alignementsImages.get(i-1).get(al).get(sMax2)));
+				int y1 = ligne(moyenneIndice(alignementsImages.get(i-1).get(al).get(sMax1)));
+				int y2 = ligne(moyenneIndice(alignementsImages.get(i-1).get(al).get(sMax2)));
+				Line l = new Line(x1, y1, x2, y2);
+				l.drawPixels(imp);
 			}
 		}
 	}
@@ -621,6 +682,8 @@ public class Detection_phyto_squelette implements PlugIn {
 				rt.setValue("Roundness moyenne", numeroImage, roundnessTotale/taille);
 				rt.setValue("Nb de branches moyen", numeroImage, (double) nbBranchesTotal/((double) taille));
 				rt.setValue("Taille de branche moyenne", numeroImage, tailleMoyenneBranchesTotale/taille);
+				rt.setValue("Nombre d'alignements", numeroImage, alignementsImages.get(numeroImage).size());
+				rt.setValue("Nb objets alignés max", numeroImage, plusGrandAlignement(numeroImage));
 			}
 			else
 			{
@@ -629,6 +692,8 @@ public class Detection_phyto_squelette implements PlugIn {
 				rt.setValue("Roundness moyenne", numeroImage, 0);
 				rt.setValue("Nb de branches moyen", numeroImage, 0);
 				rt.setValue("Taille de branche moyenne", numeroImage, 0);
+				rt.setValue("Nombre d'alignements", numeroImage, 0);
+				rt.setValue("Nb objets alignés max", numeroImage, 0);
 			}
 		}
 		macroFermerImageCopie(3);
@@ -659,6 +724,7 @@ public class Detection_phyto_squelette implements PlugIn {
 		squelettesImages = new ArrayList <ArrayList <squelette>>();
 		perimetreSquelettesPertinents = new ArrayList <ArrayList <Integer>>();
 		squelettesPertinentsImages = new ArrayList <ArrayList <squelette>>();
+		alignementsImages = new ArrayList <ArrayList <ArrayList <squelette>>>();
 	}
 	/**
 	 * Charge une ImageStack et initialise les variables nbColonnes, nbLignes et taille.
@@ -720,10 +786,12 @@ public class Detection_phyto_squelette implements PlugIn {
 			ImageStack stk = chargerImageStack();
 			determinerSquelettesDuStack(stk);
 			determinerSquelettesPertinents();
+			determinerAlignements(500);
 			macroFermerImageCopie(2);
 			ImagePlus imp2 = IJ.getImage();
 			ImageStack stk2 = imp2.getImageStack();
 			encadrerObjetsDuStack(stk2);
+			marquerAlignements(imp2);
 			int meilleureImage = calculerMeilleureImage();
 			macro8bits();
 			macroBinarise();
