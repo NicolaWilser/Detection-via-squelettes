@@ -3,115 +3,37 @@ package DetectionSquelettes;
 import java.util.ArrayList;
 import java.lang.Math;
 
-/**
- * Cette classe permet de creer des squelettes d'objets en stockant les indices de tous leurs points et en determinant les intersections du squelette. 
- * @author e1502316 Nicola Wilser
- *
- */
-
 public class squelette {
-	/**
-	 * Tableau contenant tous les points du squelette sous forme d'indice de tableau 1D.
-	 */
+	
 	public ArrayList <Integer> points;
-	/**
-	 * Tableau contenant les points des differentes branches du squelette. 
-	 */
+	
 	public ArrayList <ArrayList <Integer>> branches;
-	/**
-	 * Tableau contenant toutes les intersections du squelette sous forme d'indice de tableau 1D.
-	 * Un seul point par intersection est stocke. 
-	 */
+	
 	public ArrayList <Integer> intersections;
-	/**
-	 * Tableau contenant toutes les intersections du squelette sous forme d'indice de tableau 1D.
-	 * Plusieurs points par intersections sont stockes. 
-	 */
 	public ArrayList <Integer> intersectionsDev;
-	/**
-	 * Tableau de pixels de l'image que l'on analyse et qui contient l'objet avec son squelette. 
-	 */
-	public int[] image;
-	/**
-	 * Taille de l'image en pixels. 
-	 */
-	public int taille;
-	/**
-	 * Nombre de colonnes de l'image. 
-	 */
-	public int nbColonnes;
-	/**
-	 * Renvoie la colonne pour un tableau 2D correspondante a un indice de tableau 1D. 
-	 * @param indice (Entier) L'indice du tableau 1D.
-	 * @return (Entier) La colonne equivalente en tableau 2D.
-	 */
-	int colonne(int indice)
+	
+	public Image image;
+	
+	public squelette(Image image, int indice)
 	{
-		return indice%nbColonnes;
-	}
-	/**
-	 * Renvoie la ligne pour un tableau 2D correspondante a un indice de tableau 1D. 
-	 * @param indice (Entier) L'indice du tableau 1D.
-	 * @return (Entier) La ligne equivalente en tableau 2D.
-	 */
-	int ligne(int indice)
-	{
-		return indice/nbColonnes;
-	}
-	/**
-	 * Renvoie l'indice pour un tableau 1D correspondant a la colonne et la ligne d'un tableau 2D.
-	 * @param  ligne (Entier) La ligne du tableau 2D. 
-	 * @param  colonne (Entier) La colonne du tableau 2D.
-	 * @return (Entier) L'indice equivalent pour un tableau 1D.
-	 */
-	int indice(int ligne, int colonne)
-	{
-		return nbColonnes*ligne + colonne;
-	}
-	/**
-	 * Constructeur par defaut. 
-	 */
-	public squelette()
-	{
-	}
-	/**
-	 * Constructeur qui determine et stocke le squelette relatif au pixel indice de l'image. 
-	 * @param image (int[]) Tableau des pixels de l'image. 
-	 * @param nbColonnes (Entier) Nombre de colonnes de l'image. 
-	 * @param indice (Entier) Indice du point d'interet du squelette a determiner. 
-	 * @param taille (Entier) Taille de l'image en pixels. 
-	 */
-	public squelette(int[] image, int nbColonnes, int indice, int taille)
-	{
-		points = new ArrayList <Integer>();
-		intersections = new ArrayList <Integer>();
-		intersectionsDev = new ArrayList <Integer>();
-		branches = new ArrayList <ArrayList <Integer>>();
+		this.points = new ArrayList <Integer>();
+		this.intersections = new ArrayList <Integer>();
+		this.intersectionsDev = new ArrayList <Integer>();
+		this.branches = new ArrayList <ArrayList <Integer>>();
 		this.image = image;
-		this.nbColonnes = nbColonnes;
-		this.taille = taille;
 		verifierAutourDuPoint(indice);
 		determinerBranches();
 	}
-	/**
-	 * Determine et renvoie si deux objets situes a deux indices sont voisins non confondus. 
-	 * @param indice1 (Entier) Indice du premier objet. 
-	 * @param indice2 (Entier) Indice du premer objet. 
-	 * @return (Booleen) Vrai s'ils sont voisins, faux sinon. 
-	 */
+	
 	public boolean sontVoisins(int indice1, int indice2)
 	{
-		int x1 = colonne(indice1);
-		int y1 = ligne(indice1);
-		int x2 = colonne(indice2);
-		int y2 = ligne(indice2);
+		int x1 = image.colonne(indice1);
+		int y1 = image.ligne(indice1);
+		int x2 = image.colonne(indice2);
+		int y2 = image.ligne(indice2);
 		return ((Math.abs(x1-x2) == 1 && Math.abs(y1-y2) == 1) || (Math.abs(x1-x2) == 1 && Math.abs(y1-y2) == 0) || (Math.abs(x1-x2) == 0 && Math.abs(y1-y2) == 1));
 	}
-	/**
-	 * Determine et renvoie si un objet situe a un indice est une intersection. 
-	 * @param indicePoint (Entier) Indice de l'objet. 
-	 * @return (Booleen) Vrai si c'est une intersection, faux sinon. 
-	 */
+	
 	public boolean estDansIntersections(int indicePoint)
 	{
 		for (int i = 0; i < intersectionsDev.size(); i++)
@@ -123,35 +45,22 @@ public class squelette {
 		}
 		return false;
 	}
-	/**
-	 * Renvoie le nombre de branches du squelette. 
-	 * @return (Entier) Le nombre de branches. 
-	 */
+	
 	public int nombreBranches()
 	{
 		return branches.size();
 	}
-	/**
-	 * Renvoie la longueur du squelette. 
-	 * @return (Entier) La longueur du squelette. 
-	 */
+	
 	public int longueurSquelette()
 	{
 		return points.size();
 	}
-	/**
-	 * Renvoie la longueur d'une branche situe a un indice. 
-	 * @param indice (Entier) Indice de la branche. 
-	 * @return (Entier) La longue de la branche. 
-	 */
+	
 	public int longueurBrancheIndice(int indice)
 	{
 		return branches.get(indice).size();
 	}
-	/**
-	 * Calcule et renvoie la moyenne des longueurs des branches. 
-	 * @return (Entier) La moyenne des longueurs des branches. 
-	 */
+	
 	public int moyenneLongueurBranche()
 	{
 		int longueur;
@@ -163,9 +72,7 @@ public class squelette {
 		}
 		return (int) longueurTotale/nombreBranches();
 	}
-	/**
-	 * Determine les branches d'un squelette et les stocke dans une ArrayList. 
-	 */
+	
 	public void determinerBranches()
 	{
 		ArrayList <Boolean> marque = new ArrayList <Boolean>();
@@ -200,50 +107,30 @@ public class squelette {
 			i = tmp;
 		}
 	}
-	/**
-	 * Determine si l'indice place en parametre est valide (tests de debordements). 
-	 * @param indice (Entier) L'indice a tester. 
-	 * @return (Booleen) Vrai si l'indice est valide, faux sinon. 
-	 */
-	boolean estValide(int indice)
-	{
-		if (indice < 0 || indice >= taille)
-		{
-			return false;
-		}
-		return true;
-	}
-	/**
-	 * Blanchit les pixels de l'image qui ne sont pas parfaitement blancs. 
-	 */
+	
 	void remettreBlanc()
 	{
-		for (int i = 0; i < taille; i++)
+		for (int i = 0; i < image.taille; i++)
 		{
-			if (image[i] == 0xfffffe)
+			if (image.pixelsSquelettesCopie[i] == 0xfffffe)
 			{
-				image[i] = 0xffffff;
+				image.pixelsSquelettesCopie[i] = 0xffffff;
 			}
 		}
 	}
-	/**
-	 * Fonction qui rajoute le point courant s'il est blanc dans le tableau de points et le rajoute dans le tableau d'intersections si c'en est un aussi. 
-	 * Fait tout cela pour tous les points pertinants autour de l'indice specifie en parametre. 
-	 * @param indice (Entier) Indice du point que l'on veut verifier et ajouter s'il est valide. 
-	 * @return (Booleen) Vrai si le point est blanc, faux sinon. 
-	 */
+	
 	boolean verifierAutourDuPoint(int indice)
 	{
-		if (estValide(indice))
+		if (image.estValide(indice))
 		{
-			if (image[indice] == 0xffffff)
+			if (image.pixelsSquelettesCopie[indice] == 0xffffff)
 			{
 				points.add(indice);
 				/*
 				 * Change legerement la valeur du pixel courant pour ne pas boucler dessus. 
 				 * 0xfffffe = quasiment blanc. 
 				 */
-				image[indice] = 0xfffffe;
+				image.pixelsSquelettesCopie[indice] = 0xfffffe;
 				int nbVoisins = 0;
 				/*
 				 * Pour tous les points autour du pixel blanc, on appelle recursivement cette fonction, 
@@ -257,27 +144,27 @@ public class squelette {
 				{
 					nbVoisins++;
 				}
-				if (verifierAutourDuPoint(indice-nbColonnes))
+				if (verifierAutourDuPoint(indice-image.nbColonnes))
 				{
 					nbVoisins++;
 				}
-				if (verifierAutourDuPoint(indice+nbColonnes))
+				if (verifierAutourDuPoint(indice+image.nbColonnes))
 				{
 					nbVoisins++;
 				}
-				if (verifierAutourDuPoint(indice-nbColonnes+1))
+				if (verifierAutourDuPoint(indice-image.nbColonnes+1))
 				{
 					nbVoisins++;
 				}
-				if (verifierAutourDuPoint(indice+nbColonnes+1))
+				if (verifierAutourDuPoint(indice+image.nbColonnes+1))
 				{
 					nbVoisins++;
 				}
-				if (verifierAutourDuPoint(indice-nbColonnes-1))
+				if (verifierAutourDuPoint(indice-image.nbColonnes-1))
 				{
 					nbVoisins++;
 				}
-				if (verifierAutourDuPoint(indice+nbColonnes-1))
+				if (verifierAutourDuPoint(indice+image.nbColonnes-1))
 				{
 					nbVoisins++;
 				}
@@ -290,14 +177,14 @@ public class squelette {
 				{
 					if (!contientVoisinDansRayon(indice, 0xff0000, 2))
 					{
-						image[indice] = 0xff0000;
+						image.pixelsSquelettesCopie[indice] = 0xff0000;
 						intersections.add(indice);
 					}
 					intersectionsDev.add(indice);
 				}
 				return true;
 			}
-			if (image[indice] == 0xfffffe)
+			if (image.pixelsSquelettesCopie[indice] == 0xfffffe)
 			{
 				return true;
 			}
@@ -305,49 +192,43 @@ public class squelette {
 		}
 		return false;
 	}
-	/**
-	 * Determine s'il y a au moins un pixel de la couleur specifiee dans un rayon autour d'un indice donne. 
-	 * @param indice (Entier) Indice du pixel pour le quel on souhaite savoir s'il a des voisins. 
-	 * @param couleur (Entier) Couleur en hexadecimal de la couleur des voisins a tester. 
-	 * @param rayon (Entier) Rayon sur le quel on effectue le test. 
-	 * @return Vrai s'il y a des voisins de la bonne couleur, faux sinon. 
-	 */
+	
 	boolean contientVoisinDansRayon(int indice, int couleur, int rayon)
 	{
 		for (int l = 1; l <= rayon; l++)
 		{
-			if (image[indice-(1*l)] == couleur)
+			if (image.pixelsSquelettesCopie[indice-(1*l)] == couleur)
 			{
 				return true;
 			}
-			if (image[indice+(1*l)] == couleur)
+			if (image.pixelsSquelettesCopie[indice+(1*l)] == couleur)
 			{
 				return true;
 			}
-			if (image[indice+(nbColonnes*l)] == couleur)
+			if (image.pixelsSquelettesCopie[indice+(image.nbColonnes*l)] == couleur)
 			{
 				return true;
 			}
-			if (image[indice-(nbColonnes*l)] == couleur)
+			if (image.pixelsSquelettesCopie[indice-(image.nbColonnes*l)] == couleur)
 			{
 				return true;
 			}
 			for (int c = 1; c <= rayon; c++)
 			{
 				
-				if (image[indice+(nbColonnes*l)-(1*c)] == couleur)
+				if (image.pixelsSquelettesCopie[indice+(image.nbColonnes*l)-(1*c)] == couleur)
 				{
 					return true;
 				}
-				if (image[indice+(nbColonnes*l)+(1*c)] == couleur)
+				if (image.pixelsSquelettesCopie[indice+(image.nbColonnes*l)+(1*c)] == couleur)
 				{
 					return true;
 				}
-				if (image[indice-(nbColonnes*l)-(1*c)] == couleur)
+				if (image.pixelsSquelettesCopie[indice-(image.nbColonnes*l)-(1*c)] == couleur)
 				{
 					return true;
 				}
-				if (image[indice-(nbColonnes*l)+(1*c)] == couleur)
+				if (image.pixelsSquelettesCopie[indice-(image.nbColonnes*l)+(1*c)] == couleur)
 				{
 					return true;
 				}

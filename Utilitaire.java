@@ -73,4 +73,9 @@ public class Utilitaire {
 		double yCarre = (double) (y2-y1)*(y2-y1);
 		return (double) Math.sqrt(xCarre+yCarre);
 	}
+	
+	public static double roundness(int surface, int perimetre)
+	{
+		return (double) ((4*Math.PI*surface)/(perimetre*perimetre));
+	}
 }
