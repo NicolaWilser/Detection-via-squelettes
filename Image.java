@@ -253,9 +253,9 @@ public class Image {
 	 */
 	public boolean sontAlignes(int indiceObjet1, int indiceObjet2, int indiceObjet3, int approximation)
 	{
-		int indice1 = objets.get(indiceObjet1).indiceObjet;
-		int indice2 = objets.get(indiceObjet2).indiceObjet;
-		int indice3 = objets.get(indiceObjet3).indiceObjet;
+		int indice1 = objetsPertinents.get(indiceObjet1).indiceObjet;
+		int indice2 = objetsPertinents.get(indiceObjet2).indiceObjet;
+		int indice3 = objetsPertinents.get(indiceObjet3).indiceObjet;
 		int x1 = colonne(indice1);
 		int y1 = ligne(indice1);
 		int x2 = colonne(indice2);
@@ -304,7 +304,7 @@ public class Image {
 										{
 											int dernier = alignements.get(dernierAlignement).size()-1;
 											int avantDernier = dernier-1;
-											if (sontAlignes(avantDernier, dernier, s4, approximation))
+											if (sontAlignes(dernier, avantDernier, s4, approximation))
 											{
 												marque.set(s4, true);
 												alignements.get(dernierAlignement).add(objetsPertinents.get(s4));

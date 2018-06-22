@@ -48,6 +48,8 @@ public class Detection_phyto_squelette implements PlugIn {
 	 * Erreur toleree pour consider que trois points sont alignes. 
 	 */
 	private int facteurAlignement;
+	private double roundnessMin;
+	private double roundnessMax;
 	/**
 	 * Determine pour chaque image de {@link Detection_phyto_squelette#images} les objets pertinents dans l'ArrayList {@link Image#objetsPertinents}. 
 	 */
@@ -126,9 +128,16 @@ public class Detection_phyto_squelette implements PlugIn {
 	 */
 	public boolean estPertinent(int numeroImage, int indiceObjet)
 	{
-		boolean intersectionValide = (images.get(numeroImage).objets.get(indiceObjet).skull.intersections.size() >= minIntersection 
+		boolean roundnessValide = 
+				(images.get(numeroImage).objets.get(indiceObjet).roundness >= roundnessMin 
+				&& images.get(numeroImage).objets.get(indiceObjet).roundness <= roundnessMax);
+		boolean intersectionValide = 
+				(images.get(numeroImage).objets.get(indiceObjet).skull.intersections.size() >= minIntersection 
 				&& images.get(numeroImage).objets.get(indiceObjet).skull.intersections.size() <= maxIntersection);
-		return intersectionValide;
+		
+		boolean valide = (roundnessValide && intersectionValide);
+		
+		return valide;
 	}
 	/**
 	 * Cree et affiche un tableau de resultats contenant les donnees de l'analyse effectuee sur le stack d'images. 
@@ -136,7 +145,8 @@ public class Detection_phyto_squelette implements PlugIn {
 	public void tableauDeResultats()
 	{
 		ResultsTable rt = new ResultsTable(images.size()); 
-		int surface, surfaceTotale, perimetre, perimetreTotal, nbBranches, tailleMoyenneBranches, nbBranchesTotal, tailleMoyenneBranchesTotale, taille;
+		int surface, surfaceTotale, perimetre, perimetreTotal;
+		int nbBranches, tailleMoyenneBranches, nbBranchesTotal, tailleMoyenneBranchesTotale, taille;
 		for (int numeroImage = 0; numeroImage < images.size(); numeroImage++)
 		{
 			rt.setValue("Image", numeroImage, numeroImage+1);
@@ -272,6 +282,8 @@ public class Detection_phyto_squelette implements PlugIn {
 		GenericDialog gd = new GenericDialog("Paramètres", IJ.getInstance());
 		gd.addNumericField("Nombre de pixels min pour considérer une forme", 1000, 0);
 		gd.addNumericField("Nombre de pixels max pour considérer une forme", 14000, 0);
+		gd.addNumericField("Roundness min pour considérer une forme", 0, 2);
+		gd.addNumericField("Roundness max pour considérer une forme", 1, 2);
 		gd.addNumericField("Nombre d'intersections min dans le squelette", 2, 0);
 		gd.addNumericField("Nombre d'intersections max dans le squelette", 3, 0);
 		gd.addNumericField("Facteur d'alignement toleree", 500, 0);
@@ -281,6 +293,8 @@ public class Detection_phyto_squelette implements PlugIn {
 		}
 		minPixels = (int) gd.getNextNumber();
 		maxPixels = (int) gd.getNextNumber();
+		roundnessMin = (double) gd.getNextNumber();
+		roundnessMax = (double) gd.getNextNumber();
 		minIntersection = (int) gd.getNextNumber();
 		maxIntersection = (int) gd.getNextNumber();
 		facteurAlignement = (int) gd.getNextNumber();

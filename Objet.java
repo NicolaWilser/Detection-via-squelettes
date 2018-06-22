@@ -79,7 +79,7 @@ public class Objet {
 		if (image.estValide(indice) && image.pixelsBinairesCopie[indice] == 0xffffff)
 		{
 			image.pixelsBinairesCopie[indice] = 0xfffffe; // /!\ ici on modifie les pixels
-			return (surfaceObjet(indice+1)+surfaceObjet(indice-1)+
+			return 	(surfaceObjet(indice+1)+surfaceObjet(indice-1)+
 					surfaceObjet(indice-image.nbColonnes)+surfaceObjet(indice+image.nbColonnes)+
 					surfaceObjet(indice-image.nbColonnes+1)+surfaceObjet(indice+image.nbColonnes+1)+
 					surfaceObjet(indice-image.nbColonnes-1)+surfaceObjet(indice+image.nbColonnes-1))+1;
@@ -104,14 +104,14 @@ public class Objet {
 			image.pixelsBinairesCopie[indice] = 0xfffffe; // /!\ ici on modifie les pixels 
 			if (Utilitaire.contientVoisin(indice, -0x1000000, image.pixelsBinairesCopie, image.nbColonnes))
 			{
-				return (perimetreObjet(indice+1)+perimetreObjet(indice-1)+
+				return 	(perimetreObjet(indice+1)+perimetreObjet(indice-1)+
 						perimetreObjet(indice-image.nbColonnes)+perimetreObjet(indice+image.nbColonnes)+
 						perimetreObjet(indice-image.nbColonnes+1)+perimetreObjet(indice+image.nbColonnes+1)+
 						perimetreObjet(indice-image.nbColonnes-1)+perimetreObjet(indice+image.nbColonnes-1))+1;
 			}
 			else
 			{
-				return (perimetreObjet(indice+1)+perimetreObjet(indice-1)+
+				return 	(perimetreObjet(indice+1)+perimetreObjet(indice-1)+
 						perimetreObjet(indice-image.nbColonnes)+perimetreObjet(indice+image.nbColonnes)+
 						perimetreObjet(indice-image.nbColonnes+1)+perimetreObjet(indice+image.nbColonnes+1)+
 						perimetreObjet(indice-image.nbColonnes-1)+perimetreObjet(indice+image.nbColonnes-1));
