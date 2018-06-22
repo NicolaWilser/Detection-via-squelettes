@@ -1,14 +1,14 @@
 package DetectionSquelettes;
 
 public class Objet {
-	public squelette skull;
+	public Squelette skull;
 	public int surface;
 	public int perimetre;
 	public double roundness;
 	public int indiceObjet;
 	public Image image;
 	
-	public Objet(squelette skull, Image image)
+	public Objet(Squelette skull, Image image)
 	{
 		this.skull = skull;
 		this.image = image;

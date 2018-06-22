@@ -3,7 +3,7 @@ package DetectionSquelettes;
 import java.util.ArrayList;
 import java.lang.Math;
 
-public class squelette {
+public class Squelette {
 	
 	public ArrayList <Integer> points;
 	
@@ -14,7 +14,7 @@ public class squelette {
 	
 	public Image image;
 	
-	public squelette(Image image, int indice)
+	public Squelette(Image image, int indice)
 	{
 		this.points = new ArrayList <Integer>();
 		this.intersections = new ArrayList <Integer>();

@@ -3,6 +3,7 @@ package DetectionSquelettes;
 import java.util.ArrayList;
 
 public class Image {
+	
 	public int[] pixelsCopie;
 	public int[] pixelsSquelettesCopie;
 	public int[] pixelsBinairesCopie;
@@ -19,14 +20,17 @@ public class Image {
 	{
 		return indice%nbColonnes;
 	}
+	
 	int ligne(int indice)
 	{
 		return indice/nbColonnes;
 	}
+	
 	int indice(int ligne, int colonne)
 	{
 		return nbColonnes*ligne + colonne;
 	}
+	
 	boolean estValide(int indice)
 	{
 		if (indice < 0 || indice >= taille)
@@ -35,6 +39,7 @@ public class Image {
 		}
 		return true;
 	}
+	
 	public Image(int[] pixels, int nbColonnes, int nbLignes)
 	{
 		this.pixelsCopie = pixels.clone();
@@ -51,7 +56,6 @@ public class Image {
 		blanchirSquelette();
 		blanchirBinaire();
 		determinerObjets();
-		determinerAlignements(500);
 		remettreBlanc();
 	}
 	
@@ -73,7 +77,7 @@ public class Image {
 			if (pixelsSquelettesCopie[i] == 0xffffff)
 			{
 				// Le squelette correspondant au pixel retenu est cree, c'est a dire qu'il contient maintenant tous les points blancs proches de lui...
-				squelette tmp = new squelette(this, i);
+				Squelette tmp = new Squelette(this, i);
 				// mais on ne l'ajoute a la liste des squelettes que s'il a au moins tailleMinSquelette de points. 
 				if (tmp.points.size() > 10)
 				{
@@ -83,7 +87,7 @@ public class Image {
 		}
 	}
 	
-	public void encadrer(int position, int tailleEncadrement, int couleur)
+	public void encadrer(int position, int tailleEncadrement, int couleur, int[] pixels)
 	{
 		int colonneX = colonne(position);
 		int ligneX = ligne(position);
@@ -92,24 +96,25 @@ public class Image {
 		{
 			for (int col = colonneX-tailleEncadrement; col <= colonneX+tailleEncadrement; col++)
 			{
-				pixelsCopie[indice(ligneX-tailleEncadrement, col)] = couleur;
-				pixelsCopie[indice(ligneX+tailleEncadrement, col)] = couleur;
+				pixels[indice(ligneX-tailleEncadrement, col)] = couleur;
+				pixels[indice(ligneX+tailleEncadrement, col)] = couleur;
 			}
 			for (int ligne = ligneX-tailleEncadrement; ligne <= ligneX+tailleEncadrement; ligne++)
 			{
-				pixelsCopie[indice(ligne, colonneX-tailleEncadrement)] = couleur;
-				pixelsCopie[indice(ligne, colonneX+tailleEncadrement)] = couleur;
+				pixels[indice(ligne, colonneX-tailleEncadrement)] = couleur;
+				pixels[indice(ligne, colonneX+tailleEncadrement)] = couleur;
 			}
 		}
 	}
 	
-	public void encadrerObjetsPertinents(int tailleEncadrement, int couleur)
+	public void encadrerObjetsPertinents(int tailleEncadrement, int couleur, int[] pixels)
 	{
 		for (int i = 0; i < objetsPertinents.size(); i++)
 		{
-			encadrer(objetsPertinents.get(i).indiceObjet, tailleEncadrement, couleur);
+			encadrer(objetsPertinents.get(i).indiceObjet, tailleEncadrement, couleur, pixels);
 		}
 	}
+	
 	
 	private void blanchir(int[] pixels)
 	{
@@ -179,12 +184,12 @@ public class Image {
 	
 	public void determinerAlignements(int approximation)
 	{
+		int taille = objetsPertinents.size();
 		ArrayList <Boolean> marque = new ArrayList <Boolean>();
-		for (int j = 0; j < objetsPertinents.size(); j++)
+		for (int i = 0; i < taille; i++)
 		{
 			marque.add(false);
 		}
-		int taille = objetsPertinents.size();
 		for (int s1 = 0; s1 < taille; s1++)
 		{
 			if (marque.get(s1) == false)
@@ -203,18 +208,20 @@ public class Image {
 									marque.set(s2, true);
 									marque.set(s3, true);
 									alignements.add(new ArrayList <Objet>());
-									int dernierIndice = alignements.size();
-									alignements.get(dernierIndice-1).add(objetsPertinents.get(s1));
-									alignements.get(dernierIndice-1).add(objetsPertinents.get(s2));
-									alignements.get(dernierIndice-1).add(objetsPertinents.get(s3));
+									int dernierAlignement = alignements.size()-1;
+									alignements.get(dernierAlignement).add(objetsPertinents.get(s1));
+									alignements.get(dernierAlignement).add(objetsPertinents.get(s2));
+									alignements.get(dernierAlignement).add(objetsPertinents.get(s3));
 									for (int s4 = 0; s4 < taille; s4++)
 									{
 										if (marque.get(s4) == false)
 										{
-											if (sontAlignes(s1, s2, s3, approximation))
+											int dernier = alignements.get(dernierAlignement).size()-1;
+											int avantDernier = dernier-1;
+											if (sontAlignes(avantDernier, dernier, s4, approximation))
 											{
 												marque.set(s4, true);
-												alignements.get(dernierIndice-1).add(objetsPertinents.get(s4));
+												alignements.get(dernierAlignement).add(objetsPertinents.get(s4));
 											}
 										}
 									}

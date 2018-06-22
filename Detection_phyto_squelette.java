@@ -10,7 +10,6 @@ import ij.process.ImageProcessor;
 import ij.gui.Line;
 import ij.measure.ResultsTable;
 
-
 public class Detection_phyto_squelette implements PlugIn {
 	
 	private ArrayList<Image> image;
@@ -22,42 +21,6 @@ public class Detection_phyto_squelette implements PlugIn {
 	private int minPixels;
 	private int maxPixels;
 	private int facteurAlignement;
-	
-
-	public void macroSquelette()
-	{
-		IJ.runMacro("run(\"Skeletonize\", \"stack\")");
-	}
-	
-	public void macroDuplicate()
-	{
-		IJ.runMacro("run(\"Duplicate...\", \"duplicate\");");
-	}
-
-	public void macroRGB()
-	{
-		IJ.runMacro("run(\"RGB Color\");");
-	}
-
-	public void macro8bits()
-	{
-		IJ.runMacro("run(\"8-bit\");");
-	}
-
-	public void macroBinarise()
-	{
-		IJ.runMacro("run(\"Duplicate...\", \"duplicate\");run(\"Auto Threshold\", \"method=Otsu white stack\");run(\"Open\", \"stack\");run(\"Analyze Particles...\", \"size="+Integer.toString(minPixels)+"-"+Integer.toString(maxPixels)+" show=Masks clear stack\");setOption(\"BlackBackground\", true);run(\"Make Binary\", \"method=Default background=Light calculate black\");");
-	}
-
-	public void macroFermerImage(int nbFois)
-	{
-		String str = "";
-		for (int i = 0; i < nbFois; i++)
-		{
-			str+= "run(\"Close\");";
-		}
-		IJ.runMacro(str);
-	}
 	
 	public void determinerObjetsPertinents()
 	{
@@ -111,6 +74,15 @@ public class Detection_phyto_squelette implements PlugIn {
 				Line l = new Line(x1, y1, x2, y2);
 				l.drawPixels(imp);
 			}
+		}
+	}
+	
+	public void encadrerObjetsPertinents()
+	{
+		for (int i = 0; i < image.size(); i++)
+		{
+			int[] pixels = (int []) stack.getProcessor(i+1).getPixels();
+			image.get(i).encadrerObjetsPertinents(30, 0xff0000, pixels);
 		}
 	}
 	
@@ -172,16 +144,6 @@ public class Detection_phyto_squelette implements PlugIn {
 		rt.show("Résultats de l'analyse");
 	}
 	
-	public void encadrerObjetsPertinents()
-	{
-		for (int i = 0; i < image.size(); i++)
-		{
-			image.get(i).encadrerObjetsPertinents(50, 0xffffff);
-			int[] pixels = (int []) stack.getProcessor(i+1).getPixels();
-			pixels = (int []) image.get(i).pixelsCopie;
-		}
-	}
-	
 	public void initialiserVariables()
 	{
 		image = new ArrayList<Image>();
@@ -195,9 +157,18 @@ public class Detection_phyto_squelette implements PlugIn {
 		}
 	}
 	
+	public void determinerAlignements()
+	{
+		for (int i = 0; i < image.size(); i++)
+		{
+			image.get(i).determinerAlignements(facteurAlignement);
+		}
+	}
+	
+	
 	public void chargerImage()
 	{
-		macroRGB();
+		Utilitaire.macroRGB();
 		ImagePlus imp = IJ.getImage();
 		ImageProcessor im  = imp.getProcessor();
 		int nbColonnes = im.getWidth();
@@ -208,27 +179,27 @@ public class Detection_phyto_squelette implements PlugIn {
 			Image tmp = new Image((int[]) stk.getProcessor(i).getPixels(), nbColonnes, nbLignes);
 			image.add(tmp); 
 		}
-		macro8bits();
-		macroBinarise();
-		macroRGB();
+		Utilitaire.macro8bits();
+		Utilitaire.macroBinarise(minPixels, maxPixels);
+		Utilitaire.macroRGB();
 		ImagePlus impBinaire = IJ.getImage();
 		ImageStack stkB = impBinaire.getImageStack();
 		for (int i = 1; i <= stkB.getSize(); i++)
 		{
 			image.get(i-1).setPixelsBinaires((int[]) stkB.getProcessor(i).getPixels());
 		}
-		macroFermerImage(2);
-		macroBinarise();
-		macroSquelette();
-		macroRGB();
+		Utilitaire.macroFermerImage(2);
+		Utilitaire.macroBinarise(minPixels, maxPixels);
+		Utilitaire.macroSquelette();
+		Utilitaire.macroRGB();
 		ImagePlus impSquelette = IJ.getImage();
 		ImageStack stkS = impSquelette.getImageStack();
 		for (int i = 1; i <= stkS.getSize(); i++)
 		{
 			image.get(i-1).setPixelsSquelettes((int[]) stkS.getProcessor(i).getPixels());
 		}
-		macroFermerImage(2);
-		macroRGB();
+		Utilitaire.macroFermerImage(2);
+		Utilitaire.macroRGB();
 		ImagePlus im2 = IJ.getImage();
 		stack = im2.getStack();
 	}
@@ -241,14 +212,12 @@ public class Detection_phyto_squelette implements PlugIn {
 			initialiserImage();
 			determinerObjetsPertinents();
 			encadrerObjetsPertinents();
+			determinerAlignements();
 			marquerAlignements();
 			tableauDeResultats();
 		}
 	}
-	/**
-	 * Permet a l'utilisateur de rentrer les parametres d'analyse des images. 
-	 * @return (Booleen) Vrai si la fonction s'est bien terminee, faux si elle a ete annulee. 
-	 */
+
 	boolean lireParam() {
 		GenericDialog gd = new GenericDialog("Paramètres", IJ.getInstance());
 		gd.addNumericField("Nombre de pixels min pour considérer une forme", 1000, 0);

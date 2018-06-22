@@ -1,12 +1,9 @@
 package DetectionSquelettes;
 
+import ij.IJ;
+
 public class Utilitaire {
-	/**
-	 * Determine s'il y a au moins un pixel de la couleur specifiee autour d'un indice donne. 
-	 * @param indice (Entier) Indice du pixel pour le quel on souhaite savoir s'il a des voisins. 
-	 * @param couleur (Entier) Couleur en hexadecimal de la couleur des voisins a tester. 
-	 * @return Vrai s'il y a des voisins de la bonne couleur, faux sinon. 
-	 */
+
 	public static boolean contientVoisin(int indice, int couleur, int[] image, int nbColonnes)
 	{
 		if (image[indice-1] == couleur)
@@ -43,30 +40,13 @@ public class Utilitaire {
 		}
 		return false;
 	}
-	/**
-	 * Determine si trois points sont alignes. 
-	 * @param x1 (Entier) Colonne du premier point.
-	 * @param y1 (Entier) Ligne du premier point.
-	 * @param x2 (Entier) Colonne du deuxieme point.
-	 * @param y2 (Entier) Ligne du deuxieme point.
-	 * @param x3 (Entier) Colonne du troisieme point.
-	 * @param y3 (Entier) Ligne du troisieme point.
-	 * @param approximation (Entier) Approximation d'alignement tolere. 
-	 * @return (Booleen) Vrai s'ils sont alignes, faux sinon. 
-	 */
+
 	public static boolean sontAlignes(int x1, int y1, int x2, int y2, int x3, int y3, int approximation)
 	{
 		int calcul = (y3-y1)*(x2-x1)-(y2-y1)*(x3-x1);
 		return (Math.abs(calcul) <= approximation);
 	}
-	/**
-	 * Calcule la distance entre deux points. 
-	 * @param x1 (Entier) Colonne du premier point.
-	 * @param y1 (Entier) Ligne du premier point.
-	 * @param x2 (Entier) Colonne du deuxieme point.
-	 * @param y2 (Entier) Ligne du deuxieme point.
-	 * @return (Entier) Distance entre les deux points. 
-	 */
+
 	public static double distance(int x1, int y1, int x2, int y2)
 	{
 		double xCarre = (double) (x2-x1)*(x2-x1);
@@ -77,5 +57,40 @@ public class Utilitaire {
 	public static double roundness(int surface, int perimetre)
 	{
 		return (double) ((4*Math.PI*surface)/(perimetre*perimetre));
+	}
+	
+	public static void macroSquelette()
+	{
+		IJ.runMacro("run(\"Skeletonize\", \"stack\")");
+	}
+	
+	public static void macroDuplicate()
+	{
+		IJ.runMacro("run(\"Duplicate...\", \"duplicate\");");
+	}
+
+	public static void macroRGB()
+	{
+		IJ.runMacro("run(\"RGB Color\");");
+	}
+
+	public static void macro8bits()
+	{
+		IJ.runMacro("run(\"8-bit\");");
+	}
+
+	public static void macroBinarise(int minPixels, int maxPixels)
+	{
+		IJ.runMacro("run(\"Duplicate...\", \"duplicate\");run(\"Auto Threshold\", \"method=Otsu white stack\");run(\"Open\", \"stack\");run(\"Analyze Particles...\", \"size="+Integer.toString(minPixels)+"-"+Integer.toString(maxPixels)+" show=Masks clear stack\");setOption(\"BlackBackground\", true);run(\"Make Binary\", \"method=Default background=Light calculate black\");");
+	}
+
+	public static void macroFermerImage(int nbFois)
+	{
+		String str = "";
+		for (int i = 0; i < nbFois; i++)
+		{
+			str+= "run(\"Close\");";
+		}
+		IJ.runMacro(str);
 	}
 }
