@@ -3,17 +3,40 @@ package DetectionSquelettes;
 import java.util.ArrayList;
 import java.lang.Math;
 
+/**
+ * Classe representant le squelette d'un {@link Objet} avec ses intersections et branches. 
+ * @author e1502316
+ *
+ */
+
 public class Squelette {
 	
+	/**
+	 * Tableau contenant les points formante le squelette. 
+	 */
 	public ArrayList <Integer> points;
-	
+	/**
+	 * Tableau contenant les differentes branches du squelette. 
+	 */
 	public ArrayList <ArrayList <Integer>> branches;
-	
+	/**
+	 * Tableau contenant les differentes intersections du squelette, avec un seul point par intersection. 
+	 */
 	public ArrayList <Integer> intersections;
-	public ArrayList <Integer> intersectionsDev;
-	
+	/**
+	 * Tableau contenant les differentes intersections du squelette, mais plusieurs points correspondent parfois a une meme intersection.
+	 * Utile pour du traitement et determination de branches. 
+	 */
+	private ArrayList <Integer> intersectionsDev;
+	/**
+	 * {@link Image} ou se trouve le squelette.
+	 */
 	public Image image;
-	
+	/**
+	 * Constructeur prenant en parametre une image avec un indice d'un des points du squelette. Cree le squelette correspondant. 
+	 * @param image {@link Image}
+	 * @param indice Entier
+	 */
 	public Squelette(Image image, int indice)
 	{
 		this.points = new ArrayList <Integer>();
@@ -21,10 +44,15 @@ public class Squelette {
 		this.intersectionsDev = new ArrayList <Integer>();
 		this.branches = new ArrayList <ArrayList <Integer>>();
 		this.image = image;
-		verifierAutourDuPoint(indice);
+		ajouterPointsAutour(indice); // determine le squelette 
 		determinerBranches();
 	}
-	
+	/**
+	 * Determine et renvoie si deux points aux indices places en parametre sont voisins. 
+	 * @param indice1 Entier
+	 * @param indice2 Entier
+	 * @return Booleen 
+	 */
 	public boolean sontVoisins(int indice1, int indice2)
 	{
 		int x1 = image.colonne(indice1);
@@ -33,8 +61,12 @@ public class Squelette {
 		int y2 = image.ligne(indice2);
 		return ((Math.abs(x1-x2) == 1 && Math.abs(y1-y2) == 1) || (Math.abs(x1-x2) == 1 && Math.abs(y1-y2) == 0) || (Math.abs(x1-x2) == 0 && Math.abs(y1-y2) == 1));
 	}
-	
-	public boolean estDansIntersections(int indicePoint)
+	/**
+	 * Determine si un point d'indice place en parametre se situe dans {@link Squelette#intersectionsDev}.
+	 * @param indicePoint
+	 * @return
+	 */
+	private boolean estDansIntersections(int indicePoint)
 	{
 		for (int i = 0; i < intersectionsDev.size(); i++)
 		{
@@ -45,22 +77,35 @@ public class Squelette {
 		}
 		return false;
 	}
-	
+	/**
+	 * Retourne le nombre de branches du squelette.
+	 * @return Entier
+	 */
 	public int nombreBranches()
 	{
 		return branches.size();
 	}
-	
+	/**
+	 * Retourne la longueur du squelette. 
+	 * @return Entier
+	 */
 	public int longueurSquelette()
 	{
 		return points.size();
 	}
-	
+	/**
+	 * Retourne la longueur de la branche de {@link Squelette#branches} d'indice place en parametre.
+	 * @param indice Entier
+	 * @return Entier
+	 */
 	public int longueurBrancheIndice(int indice)
 	{
 		return branches.get(indice).size();
 	}
-	
+	/**
+	 * Calcule et renvoie la moyenne des longueurs des branches du squelette. 
+	 * @return
+	 */
 	public int moyenneLongueurBranche()
 	{
 		int longueur;
@@ -72,7 +117,9 @@ public class Squelette {
 		}
 		return (int) longueurTotale/nombreBranches();
 	}
-	
+	/**
+	 * Determine les branches du squelette. 
+	 */
 	public void determinerBranches()
 	{
 		ArrayList <Boolean> marque = new ArrayList <Boolean>();
@@ -107,19 +154,12 @@ public class Squelette {
 			i = tmp;
 		}
 	}
-	
-	void remettreBlanc()
-	{
-		for (int i = 0; i < image.taille; i++)
-		{
-			if (image.pixelsSquelettesCopie[i] == 0xfffffe)
-			{
-				image.pixelsSquelettesCopie[i] = 0xffffff;
-			}
-		}
-	}
-	
-	boolean verifierAutourDuPoint(int indice)
+	/**
+	 * Ajoute les points qui sont autour de l'indice place en parametre dans {@link Squelette#points}. Renvoie si l'indice en question correspond a un point. 
+	 * @param indice Entier
+	 * @return Booleen
+	 */
+	boolean ajouterPointsAutour(int indice)
 	{
 		if (image.estValide(indice))
 		{
@@ -136,35 +176,35 @@ public class Squelette {
 				 * Pour tous les points autour du pixel blanc, on appelle recursivement cette fonction, 
 				 * on en profite pour compter le nombre de voisins du pixel courant. 
 				 */
-				if (verifierAutourDuPoint(indice-1))
+				if (ajouterPointsAutour(indice-1))
 				{
 					nbVoisins++;
 				}
-				if (verifierAutourDuPoint(indice+1))
+				if (ajouterPointsAutour(indice+1))
 				{
 					nbVoisins++;
 				}
-				if (verifierAutourDuPoint(indice-image.nbColonnes))
+				if (ajouterPointsAutour(indice-image.nbColonnes))
 				{
 					nbVoisins++;
 				}
-				if (verifierAutourDuPoint(indice+image.nbColonnes))
+				if (ajouterPointsAutour(indice+image.nbColonnes))
 				{
 					nbVoisins++;
 				}
-				if (verifierAutourDuPoint(indice-image.nbColonnes+1))
+				if (ajouterPointsAutour(indice-image.nbColonnes+1))
 				{
 					nbVoisins++;
 				}
-				if (verifierAutourDuPoint(indice+image.nbColonnes+1))
+				if (ajouterPointsAutour(indice+image.nbColonnes+1))
 				{
 					nbVoisins++;
 				}
-				if (verifierAutourDuPoint(indice-image.nbColonnes-1))
+				if (ajouterPointsAutour(indice-image.nbColonnes-1))
 				{
 					nbVoisins++;
 				}
-				if (verifierAutourDuPoint(indice+image.nbColonnes-1))
+				if (ajouterPointsAutour(indice+image.nbColonnes-1))
 				{
 					nbVoisins++;
 				}
@@ -192,7 +232,13 @@ public class Squelette {
 		}
 		return false;
 	}
-	
+	/**
+	 * Determine et renvoie s'il y a un voisin autour du point d'indice place en parametre dans un rayon et d'une couleur donnes. 
+	 * @param indice Entier
+	 * @param couleur Entier en hexadecimal
+	 * @param rayon Entier
+	 * @return Booleen 
+	 */
 	boolean contientVoisinDansRayon(int indice, int couleur, int rayon)
 	{
 		for (int l = 1; l <= rayon; l++)
