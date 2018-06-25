@@ -129,7 +129,13 @@ public class Utilitaire {
 	 */
 	public static void macroBinarise(int minPixels, int maxPixels)
 	{
-		IJ.runMacro("run(\"Duplicate...\", \"duplicate\");run(\"Auto Threshold\", \"method=Otsu white stack\");run(\"Open\", \"stack\");run(\"Analyze Particles...\", \"size="+Integer.toString(minPixels)+"-"+Integer.toString(maxPixels)+" show=Masks clear stack\");setOption(\"BlackBackground\", true);run(\"Make Binary\", \"method=Default background=Light calculate black\");");
+		String str = "";
+		str += "run(\"Auto Threshold\", \"method=Otsu white stack\");";
+		str += "run(\"Open\", \"stack\");";
+		str += "run(\"Analyze Particles...\", \"size="+Integer.toString(minPixels)+"-"+Integer.toString(maxPixels)+" show=Masks clear stack\");";
+		str += "run(\"Make Binary\", \"method=Default background=Light calculate black\");";
+		macroDuplicate();
+		IJ.runMacro(str);
 	}
 	/**
 	 * Ececute une macro ImageJ qui ferme un certain nombre d'images ouvertes. 

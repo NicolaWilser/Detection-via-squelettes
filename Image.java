@@ -23,7 +23,7 @@ public class Image {
 	 */
 	public ArrayList <Objet> objets;
 	/**
-	 * Tableau des objets pertinents dans l'image courante. Cette variable doit etre initialisee par la fonction {@link Detection_phyto_squelette#determinerObjetsPertinents()}.
+	 * Tableau des objets pertinents dans l'image courante. Cette variable doit etre initialisee par la fonction {@link Detection#determinerObjetsPertinents()}.
 	 */
 	public ArrayList <Objet> objetsPertinents;
 	/**

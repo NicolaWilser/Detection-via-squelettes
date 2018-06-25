@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
-import ij.gui.GenericDialog;
 import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
 import ij.gui.Line;
@@ -18,7 +17,7 @@ import ij.measure.ResultsTable;
  *
  */
 
-public class Detection_phyto_squelette implements PlugIn {
+public class Detection implements PlugIn {
 	
 	/**
 	 * Tableau contenant toutes les images ({@link Image}) actuellement analysees. Peut être une seule image. 
@@ -29,29 +28,31 @@ public class Detection_phyto_squelette implements PlugIn {
 	 */
 	private ImageStack stack;
 	/**
-	 * Minimum d'intersections dans un squelette d'objet pour le considerer comme pertinent. 
+	 * Parametres ({@link Parametre}) de detection des objets pertinents. 
 	 */
-	private int minIntersection;
+	private Parametre param;
+	
 	/**
-	 * Maximum d'intersections dans un squelette d'objet pour le considerer comme pertinent. 
+	 * Determine si un {@link Objet} de {@link Image#objets} d'indice indiceObjet de l'{@link Image} d'indice numeroImage est pertinent. 
+	 * @param numeroImage Entier
+	 * @param indiceObjet Entier
+	 * @return Booleen 
 	 */
-	private int maxIntersection;  
+	public boolean estPertinent(int numeroImage, int indiceObjet)
+	{
+		boolean roundnessValide = 
+				(images.get(numeroImage).objets.get(indiceObjet).roundness >= param.roundnessMin 
+				&& images.get(numeroImage).objets.get(indiceObjet).roundness <= param.roundnessMax);
+		boolean intersectionValide = 
+				(images.get(numeroImage).objets.get(indiceObjet).skull.intersections.size() >= param.minIntersection 
+				&& images.get(numeroImage).objets.get(indiceObjet).skull.intersections.size() <= param.maxIntersection);
+		
+		boolean valide = (roundnessValide && intersectionValide);
+		
+		return valide;
+	}
 	/**
-	 * Taille minimum en pixels d'un objet pour qu'il soit analyser. 
-	 */
-	private int minPixels;
-	/**
-	 * Taille maximum en pixels d'un objet pour qu'il soit analyser.
-	 */
-	private int maxPixels;
-	/**
-	 * Erreur toleree pour consider que trois points sont alignes. 
-	 */
-	private int facteurAlignement;
-	private double roundnessMin;
-	private double roundnessMax;
-	/**
-	 * Determine pour chaque image de {@link Detection_phyto_squelette#images} les objets pertinents dans l'ArrayList {@link Image#objetsPertinents}. 
+	 * Determine pour chaque image de {@link Detection#images} les objets pertinents dans l'ArrayList {@link Image#objetsPertinents}. 
 	 */
 	public void determinerObjetsPertinents()
 	{
@@ -72,6 +73,17 @@ public class Detection_phyto_squelette implements PlugIn {
 					}
 				}
 			}
+		}
+	}
+	/**
+	 * Encadre les objets pertinents des images du stack. 
+	 */
+	public void encadrerObjetsPertinents()
+	{
+		for (int i = 0; i < images.size(); i++)
+		{
+			int[] pixels = (int []) stack.getProcessor(i+1).getPixels();
+			images.get(i).encadrerObjetsPertinents(30, 0xff0000, pixels);
 		}
 	}
 	/**
@@ -108,36 +120,6 @@ public class Detection_phyto_squelette implements PlugIn {
 				l.drawPixels(imp);
 			}
 		}
-	}
-	/**
-	 * Encadre les objets pertinents des images du stack. 
-	 */
-	public void encadrerObjetsPertinents()
-	{
-		for (int i = 0; i < images.size(); i++)
-		{
-			int[] pixels = (int []) stack.getProcessor(i+1).getPixels();
-			images.get(i).encadrerObjetsPertinents(30, 0xff0000, pixels);
-		}
-	}
-	/**
-	 * Determine si un {@link Objet} de {@link Image#objets} d'indice indiceObjet de l'{@link Image} d'indice numeroImage est pertinent. 
-	 * @param numeroImage Entier
-	 * @param indiceObjet Entier
-	 * @return Booleen 
-	 */
-	public boolean estPertinent(int numeroImage, int indiceObjet)
-	{
-		boolean roundnessValide = 
-				(images.get(numeroImage).objets.get(indiceObjet).roundness >= roundnessMin 
-				&& images.get(numeroImage).objets.get(indiceObjet).roundness <= roundnessMax);
-		boolean intersectionValide = 
-				(images.get(numeroImage).objets.get(indiceObjet).skull.intersections.size() >= minIntersection 
-				&& images.get(numeroImage).objets.get(indiceObjet).skull.intersections.size() <= maxIntersection);
-		
-		boolean valide = (roundnessValide && intersectionValide);
-		
-		return valide;
 	}
 	/**
 	 * Cree et affiche un tableau de resultats contenant les donnees de l'analyse effectuee sur le stack d'images. 
@@ -193,6 +175,7 @@ public class Detection_phyto_squelette implements PlugIn {
 		}
 		rt.show("Résultats de l'analyse");
 	}
+	
 	/**
 	 * Initialise les ArrayList. 
 	 */
@@ -217,7 +200,7 @@ public class Detection_phyto_squelette implements PlugIn {
 	{
 		for (int i = 0; i < images.size(); i++)
 		{
-			images.get(i).determinerAlignements(facteurAlignement);
+			images.get(i).determinerAlignements(param.facteurAlignement);
 		}
 	}
 	/**
@@ -237,7 +220,7 @@ public class Detection_phyto_squelette implements PlugIn {
 			images.add(tmp); 
 		}
 		Utilitaire.macro8bits();
-		Utilitaire.macroBinarise(minPixels, maxPixels);
+		Utilitaire.macroBinarise(param.minPixels, param.maxPixels);
 		Utilitaire.macroRGB();
 		ImagePlus impBinaire = IJ.getImage();
 		ImageStack stkB = impBinaire.getImageStack();
@@ -246,7 +229,7 @@ public class Detection_phyto_squelette implements PlugIn {
 			images.get(i-1).setPixelsBinaires((int[]) stkB.getProcessor(i).getPixels());
 		}
 		Utilitaire.macroFermerImage(2);
-		Utilitaire.macroBinarise(minPixels, maxPixels);
+		Utilitaire.macroBinarise(param.minPixels, param.maxPixels);
 		Utilitaire.macroSquelette();
 		Utilitaire.macroRGB();
 		ImagePlus impSquelette = IJ.getImage();
@@ -262,7 +245,8 @@ public class Detection_phyto_squelette implements PlugIn {
 	}
 	
 	public void run(String arg) {
-		if (lireParam())
+		param = new Parametre();
+		if (param.lireParam())
 		{
 			initialiserVariables();
 			chargerImage();
@@ -273,31 +257,5 @@ public class Detection_phyto_squelette implements PlugIn {
 			marquerAlignements();
 			tableauDeResultats();
 		}
-	}
-	/**
-	 * Ouvre une interface utilisateur pour la saisie des parametres d'analyse et de detections des objets. Renvoie si l'utilisateur a valide la saisie ou non. 
-	 * @return Booleen 
-	 */
-	boolean lireParam() {
-		GenericDialog gd = new GenericDialog("Paramètres", IJ.getInstance());
-		gd.addNumericField("Nombre de pixels min pour considérer une forme", 1000, 0);
-		gd.addNumericField("Nombre de pixels max pour considérer une forme", 14000, 0);
-		gd.addNumericField("Roundness min pour considérer une forme", 0, 2);
-		gd.addNumericField("Roundness max pour considérer une forme", 1, 2);
-		gd.addNumericField("Nombre d'intersections min dans le squelette", 2, 0);
-		gd.addNumericField("Nombre d'intersections max dans le squelette", 3, 0);
-		gd.addNumericField("Facteur d'alignement toleree", 500, 0);
-		gd.showDialog();
-		if (gd.wasCanceled()) {
-			return false;
-		}
-		minPixels = (int) gd.getNextNumber();
-		maxPixels = (int) gd.getNextNumber();
-		roundnessMin = (double) gd.getNextNumber();
-		roundnessMax = (double) gd.getNextNumber();
-		minIntersection = (int) gd.getNextNumber();
-		maxIntersection = (int) gd.getNextNumber();
-		facteurAlignement = (int) gd.getNextNumber();
-		return true;
 	}
 }
