@@ -44,6 +44,12 @@ public class Parametre {
 	 * @return Booleen 
 	 */
 	boolean lireParam() {
+		/*
+		 * addNumericField prend en parametres : 
+		 * - Un string pour le nom du champ,
+		 * - Una valeur par defaut,
+		 * - Le nombre de decimales apres la virgule. 
+		 */
 		GenericDialog gd = new GenericDialog("Paramètres", IJ.getInstance());
 		gd.addNumericField("Nombre de pixels min pour considérer une forme", 1000, 0);
 		gd.addNumericField("Nombre de pixels max pour considérer une forme", 14000, 0);
@@ -56,6 +62,9 @@ public class Parametre {
 		if (gd.wasCanceled()) {
 			return false;
 		}
+		/*
+		 * getNextNumber prend les champs l'un apres l'autre. 
+		 */
 		minPixels = (int) gd.getNextNumber();
 		maxPixels = (int) gd.getNextNumber();
 		roundnessMin = (double) gd.getNextNumber();

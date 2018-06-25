@@ -104,7 +104,7 @@ public class Squelette {
 	}
 	/**
 	 * Calcule et renvoie la moyenne des longueurs des branches du squelette. 
-	 * @return
+	 * @return Entier
 	 */
 	public int moyenneLongueurBranche()
 	{

@@ -90,7 +90,7 @@ public class Objet {
 		}
 	}
 	/**
-	 * Calcule et renvoie le perimetre de l'objet place a l'indice en paramtre.
+	 * Calcule et renvoie le perimetre de l'objet place a l'indice en parametre.
 	 * @param indice Entier
 	 * @return Entier
 	 */
@@ -126,7 +126,7 @@ public class Objet {
 	 * Calcule et renvoie la roundness de l'objet. 
 	 * @return Double
 	 */
-	public double roundness()
+	private double roundness()
 	{
 		return (double) ((4*Math.PI*surface)/(perimetre*perimetre));
 	}

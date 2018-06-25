@@ -49,7 +49,7 @@ public class Image {
 	 * @param indice Entier
 	 * @return Entier
 	 */
-	int colonne(int indice)
+	public int colonne(int indice)
 	{
 		return indice%nbColonnes;
 	}
@@ -58,7 +58,7 @@ public class Image {
 	 * @param indice Entier
 	 * @return Entier
 	 */
-	int ligne(int indice)
+	public int ligne(int indice)
 	{
 		return indice/nbColonnes;
 	}
@@ -68,7 +68,7 @@ public class Image {
 	 * @param colonne Entier
 	 * @return Entier
 	 */
-	int indice(int ligne, int colonne)
+	public int indice(int ligne, int colonne)
 	{
 		return nbColonnes*ligne + colonne;
 	}
@@ -77,7 +77,7 @@ public class Image {
 	 * @param indice Entier
 	 * @return Booleen
 	 */
-	boolean estValide(int indice)
+	public boolean estValide(int indice)
 	{
 		if (indice < 0 || indice >= taille)
 		{
@@ -100,9 +100,9 @@ public class Image {
 		alignements = new ArrayList <ArrayList <Objet>>();
 	}
 	/**
-	 * Inialise l'image en y determinant les differents objets. Ne determine pas les objets pertinents. 
+	 * Initialise l'image en y determinant les differents objets. Ne determine pas les objets pertinents. 
 	 */
-	void initialiserImage()
+	public void initialiserImage()
 	{
 		blanchirSquelette();
 		blanchirBinaire();
