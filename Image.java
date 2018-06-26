@@ -10,6 +10,10 @@ import java.util.ArrayList;
 
 public class Image {
 	/**
+	 * Tableau des pixels de l'image courante.. 
+	 */
+	public int[] pixelsCopie;
+	/**
 	 * Tableau des pixels de l'image courante avec ses objets sous forme de squelette. 
 	 */
 	public int[] pixelsSquelettesCopie;
@@ -124,6 +128,14 @@ public class Image {
 	public void setPixelsSquelettes(int[] pixels)
 	{
 		this.pixelsSquelettesCopie = pixels.clone();
+	}
+	/**
+	 * Permet de definir le tableau de {@link Image#pixelsCopie} avec le tableau place en parametre. 
+	 * @param pixels Tableau d'entiers
+	 */
+	public void setPixels(int[] pixels)
+	{
+		this.pixelsCopie = pixels.clone();
 	}
 	/**
 	 * Determine les objets d'une image et les stocke dans {@link Image#objets}. 

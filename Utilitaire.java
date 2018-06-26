@@ -150,4 +150,15 @@ public class Utilitaire {
 		}
 		IJ.runMacro(str);
 	}
+	/**
+	 * Calcule l'intensite d'une valeur de pixel. 
+	 */
+	public static double intensite(int valeur)
+	{
+		int r=(valeur & 0xFF0000)>>16; // rouge
+		int v=(valeur & 0x00FF00)>>8; // vert
+		int b=(valeur & 0x0000FF); // bleu
+		int max = Math.max(r, Math.max(v, b));
+		return (double) (max*100)/(255);
+	}
 }

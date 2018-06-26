@@ -129,6 +129,7 @@ public class Detection implements PlugIn {
 		ResultsTable rt = new ResultsTable(images.size()); 
 		int surface, surfaceTotale, perimetre, perimetreTotal;
 		int nbBranches, tailleMoyenneBranches, nbBranchesTotal, tailleMoyenneBranchesTotale, taille;
+		double intensiteTotale;
 		for (int numeroImage = 0; numeroImage < images.size(); numeroImage++)
 		{
 			rt.setValue("Image", numeroImage, numeroImage+1);
@@ -138,6 +139,7 @@ public class Detection implements PlugIn {
 			perimetreTotal = 0;
 			nbBranchesTotal = 0;
 			tailleMoyenneBranchesTotale = 0; 
+			intensiteTotale = 0; 
 			int i;
 			for (i = 0; i < taille; i++)
 			{
@@ -149,14 +151,17 @@ public class Detection implements PlugIn {
 				perimetreTotal += perimetre;
 				nbBranchesTotal += nbBranches;
 				tailleMoyenneBranchesTotale += tailleMoyenneBranches;
+				intensiteTotale += images.get(numeroImage).objetsPertinents.get(i).intensite;
 			}
 			if (i != 0)
 			{
 				int surfaceMoyenne = surfaceTotale/taille;
 				int perimetreMoyen = perimetreTotal/taille;
+				double intensiteMoyenne = intensiteTotale/taille;
 				rt.setValue("Surface moyenne", numeroImage, surfaceMoyenne);
 				rt.setValue("Perimetre moyen", numeroImage, perimetreMoyen);
 				rt.setValue("Roundness moyenne", numeroImage, Utilitaire.roundness(surfaceMoyenne, perimetreMoyen));
+				rt.setValue("Intensité moyenne", numeroImage, intensiteMoyenne);
 				rt.setValue("Nb de branches moyen", numeroImage, (double) nbBranchesTotal/((double) taille));
 				rt.setValue("Taille de branche moyenne", numeroImage, tailleMoyenneBranchesTotale/taille);
 				rt.setValue("Nombre d'alignements", numeroImage, images.get(numeroImage).alignements.size());
@@ -167,6 +172,7 @@ public class Detection implements PlugIn {
 				rt.setValue("Surface moyenne", numeroImage, 0);
 				rt.setValue("Perimetre moyen", numeroImage, 0);
 				rt.setValue("Roundness moyenne", numeroImage, 0);
+				rt.setValue("Intensité moyenne", numeroImage, 0);
 				rt.setValue("Nb de branches moyen", numeroImage, 0);
 				rt.setValue("Taille de branche moyenne", numeroImage, 0);
 				rt.setValue("Nombre d'alignements", numeroImage, 0);
@@ -217,6 +223,7 @@ public class Detection implements PlugIn {
 		for (int i = 1; i <= stk.getSize(); i++)
 		{
 			Image tmp = new Image(nbColonnes, nbLignes);
+			tmp.setPixels((int []) stk.getProcessor(i).getPixels());
 			images.add(tmp); 
 		}
 		Utilitaire.macro8bits();

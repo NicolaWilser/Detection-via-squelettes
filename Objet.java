@@ -24,9 +24,17 @@ public class Objet {
 	 */
 	public double roundness;
 	/**
+	 * Intensite moyenne de l'objet. 
+	 */
+	public double intensite;
+	/**
 	 * Indice dans l'image de la position de l'objet. Il s'agit d'un indice moyen qui represente le centre de l'objet. 
 	 */
 	public int indiceObjet;
+	/**
+	 * Rayon approximatif de l'objet, donnee utilisee pour d'autres traitements. 
+	 */
+	public int rayon;
 	/**
 	 * {@link Image} dans la quelle se situe l'objet. 
 	 */
@@ -47,6 +55,8 @@ public class Objet {
 		this.perimetre = perimetreObjet(this.indiceObjet);
 		image.blanchirBinaire();
 		this.roundness = roundness();
+		this.rayon = rayon();
+		this.intensite = intensite();
 	}
 	/**
 	 * Calcule l'indice de la position moyenne de l'objet. 
@@ -121,6 +131,34 @@ public class Objet {
 		{
 			return 0;
 		}
+	}
+	private double intensite()
+	{
+		int intensiteTotale = 0;
+		int iteration = 0;
+		int x = image.colonne(indiceObjet);
+		int y = image.ligne(indiceObjet);
+		int secteur = (rayon/2);
+		for (int i = y-secteur; i < y+secteur; i++)
+		{
+			for (int j = x-secteur; j < x+secteur; j++)
+			{
+				iteration++;
+				intensiteTotale += Utilitaire.intensite(image.pixelsCopie[image.indice(i, j)]);
+			}
+		}
+		return (double) intensiteTotale/iteration;
+	}
+	private int rayon()
+	{
+		int indice = indiceObjet;
+		int rayon = 0; 
+		while (image.pixelsBinairesCopie[indice] > 0 && image.pixelsBinairesCopie[indice] != -0x1000000)
+		{
+			indice -= image.nbColonnes;
+			rayon++;
+		}
+		return rayon;
 	}
 	/**
 	 * Calcule et renvoie la roundness de l'objet. 
